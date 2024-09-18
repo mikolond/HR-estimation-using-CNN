@@ -5,7 +5,7 @@ import math
 # Define the codec and create VideoWriter object
 # Here 'XVID' is the codec, and the output is saved as an AVI file
 fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Codec
-out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))  # Filename, codec, FPS, frame size
+out = cv2.VideoWriter('test_videos/output.avi', fourcc, 20.0, (640, 480))  # Filename, codec, FPS, frame size
 
 c = 3
 amplitude = 50
