@@ -12,7 +12,7 @@ def create_layer(params):
             i += 5
         elif params[i] == "MP": # Max Pooling
             layer += [nn.MaxPool2d(kernel_size=params[i + 1], stride=params[i + 2])]
-            i += 3
+            i += 2
         elif params[i] == "ELU": # Exponential Linear Unit
             layer += [nn.ELU(params[i + 1])]
             i += 1
