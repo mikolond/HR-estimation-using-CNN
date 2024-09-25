@@ -47,17 +47,20 @@ class Extractor(nn.Module):
 
         self.init_weights()
 
-    def forward(self, x):
-        # normalization for range [-1,1]
-        batch_size = x.size(0)
-        x = x / x.max()
-        x = x - x.mean() # why I did this??
+    def forward_single(self, x):
+        # normalization to [-1, 1]
+        x = x / x.max()*2 - 1
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
         return x
-        pass
+
+    def forward(self, x, n):
+        output_vector = torch.zeros(n, 1)
+        for i in range(n):
+            output_vector[i] = self.forward_single(x[i])
+        return output_vector
 
     def init_weights(self):
         for layer in self.modules():
