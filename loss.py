@@ -45,4 +45,4 @@ class ExtractorLoss(nn.Module):
 
 
     def forward(self, x, f_true, fs, delta, f_range):
-        return self.SNR(x, f_true, fs, delta, f_range)
+        return - self.SNR(x, f_true, fs, delta, f_range)
