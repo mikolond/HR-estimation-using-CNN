@@ -32,6 +32,7 @@ class ExtractorLoss(nn.Module):
         return: 
         '''
         f_min, f_max = f_range
+        # list of wanted and unwanted frequencies
         f_wanted =list(range(f_true - delta, f_true + delta + 1))
         f_unwanted = list(range(f_min, f_true - delta)) + list(range(f_true + delta + 1, f_max+1))
         term1 = 0
