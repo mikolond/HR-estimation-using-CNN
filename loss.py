@@ -22,7 +22,7 @@ class ExtractorLoss(nn.Module):
             term2 += x[i] * np.sin(2 * np.pi * f_true * i / fs)
         return term1**2 + term2**2
     
-    def SNR(self, x, f_true, fs, delta, f_range):
+    def SNR(self, x, f_true, fs, delta, sampling_f, f_range):
         '''
         Returns signal to noise ratio of given sequence inside list x
         params: x :list of numbers
@@ -33,17 +33,22 @@ class ExtractorLoss(nn.Module):
         '''
         f_min, f_max = f_range
         # list of wanted and unwanted frequencies
-        f_wanted =list(range(f_true - delta, f_true + delta + 1))
-        f_unwanted = list(range(f_min, f_true - delta)) + list(range(f_true + delta + 1, f_max+1))
+        f_wanted =list(torch.arange(f_true - delta, f_true + delta + sampling_f, sampling_f))
+        print("f_min",f_min, "f_true",f_true, "delta",delta, "f_max",f_max)
+        f_unwanted = list(torch.arange(f_min, f_true - delta, sampling_f)) + list(torch.arange(f_true + delta + sampling_f, f_max + sampling_f, sampling_f))
         term1 = 0
         term2 = 0
         for f in f_wanted:
-            term1 += self.PSD(x, f, fs)
+            term1 += self.PSD(x, f, fs)/len(f_wanted)
         for f in f_unwanted:
-            term2 += self.PSD(x, f, fs)
+            term2 += self.PSD(x, f, fs)/len(f_unwanted)
 
         return 10 * torch.log10(term1 / term2)
 
 
-    def forward(self, x, f_true, fs, delta, f_range):
-        return - self.SNR(x, f_true, fs, delta, f_range)
+    def forward(self, x, f_true, fs, delta, sampling_f, f_range):
+        l = len(x)
+        loss_sum = 0
+        for i in range(len(x)):
+            loss_sum -= self.SNR(x[i], f_true[i], fs, delta, sampling_f, f_range)
+        return loss_sum / l
