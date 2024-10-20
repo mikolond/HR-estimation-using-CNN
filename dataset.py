@@ -4,18 +4,20 @@ import numpy as np
 
 
 class MyDataset(Dataset):
-    def __init__(self,path):
+    def __init__(self,path, filenames_vid, filenames_txt, n, fs_list):
+        self.path = path
+        self.filenames_vid = filenames_vid
+        self.filenames_txt = filenames_txt
+        self.fs_list = fs_list
         self.n = n
-        self.f = f
-        self.fs = fs
-        self.length = length
-
+        self.current_file = 0
+        self.current_shot = 0 # start of the sequence of the shots in the video
+        self.current_opened_video = None
+        self.current_opened_txt = None
+    
     def __len__(self):
-        return self.n
+        return len(self.filenames_vid)
 
     def __getitem__(self, idx):
-        c = 2 * np.pi * self.f / self.fs
-        amplitude = 50
-        x = np.array([[[100 + np.sin(i * c) * amplitude, 100 + np.sin(i * c) * amplitude, 0]] * 640] * 480, dtype=np.uint8)
-        x = torch.tensor(x, dtype=torch.float32)
-        return x
+        
+        return 
