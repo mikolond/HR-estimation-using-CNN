@@ -1,4 +1,4 @@
-from model_details import Extractor
+from model import Extractor
 from loss import ExtractorLoss
 from matplotlib import pyplot as plt
 
@@ -111,7 +111,7 @@ criterion = ExtractorLoss()
 
 loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 print("loss1:",loss)
 loss.backward()
 optimizer.step()

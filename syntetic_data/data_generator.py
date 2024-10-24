@@ -7,7 +7,7 @@ import os
 
 def main():
     # Create an ArgumentParser object
-    parser = argparse.ArgumentParser(description="A simple script using argparse.")
+    parser = argparse.ArgumentParser(description="Synthetic data generator for hr estimatoin.")
     
     # Add arguments
     parser.add_argument("f", type=float, help="simulated HR frequency in Hz")
