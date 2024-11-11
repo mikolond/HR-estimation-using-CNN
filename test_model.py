@@ -63,6 +63,7 @@ print("lenght of ground truth",len(N_truth))
 print("ground truth",N_truth)
 
 # load model
+torch.device("cuda")
 
 model = Extractor()
 model.init_weights()
@@ -80,7 +81,7 @@ plt.title("Ground True")
 plt.savefig("ground_true.png")
 
 
-# try feedforward of the model
+# load model 
 
 x = torch.tensor(np.array(N_vid).transpose(0,3,2,1)).float()  # shape (N, C, H, W)
 print("shape of x",x.shape)
@@ -91,65 +92,67 @@ f_range = np.array([1, 150]) / 60
 sampling_f = 1/60
 
 
-
-
-output = model(x,N).reshape(1,N)
-print("output shape",output.shape)
-
-output_numpy = output.detach().numpy()
-# create figure with output plot
-plt.figure()
-plt.plot(output_numpy[0])
-plt.title("Output")
-# save figure
-plt.savefig("output1.png")
-
-
-
 # load loss
 criterion = ExtractorLoss()
 
-loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.00005)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-print("loss1:",loss)
-loss.backward()
-optimizer.step()
-
-output = model(x,N).reshape(1,N)
-print("output shape",output.shape)
-
-output_numpy = output.detach().numpy()
-# create figure with output plot
-plt.figure()
-plt.plot(output_numpy[0])
-plt.title("Output")
-# save figure
-plt.savefig("output2.png")
+i = 0
+train_count = 100
+for i in range(train_count):
 
 
+    output = model(x,N).reshape(1,N)
+    print("output shape",output.shape)
 
-loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
+    output_numpy = output.detach().numpy()
+    # create figure with output plot
+    plt.figure()
+    plt.plot(output_numpy[0])
+    plt.title("Output" + str(i))
+    # save figure
+    plt.savefig("graphs/output"+ str(i)+".png")
 
-print("loss2:",loss)
-loss.backward()
-optimizer.step()
 
-output = model(x,N).reshape(1,N)
-print("output shape",output.shape)
 
-output_numpy = output.detach().numpy()
-# create figure with output plot
-plt.figure()
-plt.plot(output_numpy[0])
-plt.title("Output")
-# save figure
-plt.savefig("output3.png")
+    loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
+    print("loss ",i, ":", loss)
+    loss.backward()
+    optimizer.step()
 
-loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
-print("loss3:",loss)
+pass
 
-loss.backward()
-optimizer.step()
+# output_numpy = output.detach().numpy()
+# # create figure with output plot
+# plt.figure()
+# plt.plot(output_numpy[0])
+# plt.title("Output")
+# # save figure
+# plt.savefig("output2.png")
 
-print("loss",loss)
+
+
+# loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
+
+# print("loss2:",loss)
+# loss.backward()
+# optimizer.step()
+
+# output = model(x,N).reshape(1,N)
+# print("output shape",output.shape)
+
+# output_numpy = output.detach().numpy()
+# # create figure with output plot
+# plt.figure()
+# plt.plot(output_numpy[0])
+# plt.title("Output")
+# # save figure
+# plt.savefig("output3.png")
+
+# loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
+# print("loss3:",loss)
+
+# loss.backward()
+# optimizer.step()
+
+# print("loss",loss)
