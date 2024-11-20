@@ -25,7 +25,3 @@ cv2.imshow("cropped", img_show)
 cv2.waitKey(0)
 
 
-
-img_res = resnet(img_cropped.unsqueeze(0))
-
-print(img_res.shape)
