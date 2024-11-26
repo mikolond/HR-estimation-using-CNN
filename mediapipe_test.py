@@ -37,7 +37,15 @@ options = vision.FaceDetectorOptions(base_options=base_options)
 detector = vision.FaceDetector.create_from_options(options)
 
 # STEP 3: Load the input image.
-image = mp.Image.create_from_file('face1.jpg')
+img = cv2.imread('faces1.jpg')
+# image = mp.Image.create_from_file('face1.jpg')
+img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+# Convert the image to a MediaPipe Image format.
+image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
+
+
+# image = mp.Image(format=mp.ImageFormat.SRGB, data=img)
 
 # STEP 4: Detect faces in the input image.
 start_time = time.time()
@@ -46,7 +54,7 @@ print("resiults: ", detection_result)
 print("Time taken: ", time.time() - start_time)
 
 bb = detection_result.detections[0].bounding_box
-bb_center = [bb.origin_x, bb.origin_y]
+bb_origin = [bb.origin_x, bb.origin_y]
 bb_width = bb.width
 bb_height = bb.height
 
@@ -55,12 +63,37 @@ print("Keypoints: ", kp)
 
 print("Bounding box: ", bb)
 
-img = cv2.imread('face1.jpg')
+# desired bb ratio
+bb_ratio = 3/2
+bb_height_new =bb_ratio * bb_width
+print("New height: ", bb_height_new)
+print("Old height: ", bb_height)
+print("Width: ", bb_width)
+height_difference = bb_height_new - bb_height
+print("Height difference: ", height_difference)
+
+# create rectangle points
+pt1 = (int(bb_origin[0]), int(bb_origin[1]-height_difference/2))
+pt2 = (int(bb_origin[0]+bb_width), int(bb_origin[1]+bb_height+height_difference/2))
+
+# get new image just from the bounding box
+img_face = img[pt1[1]:pt2[1], pt1[0]:pt2[0]]
+
+cv2.imshow('face', img_face)
+cv2.waitKey(0)
 
 # draw bounding box using opencv
-cv2.rectangle(img, (int(bb_center[0]), int(bb_center[1])),
-              (int((bb_center[0] + bb_width)), int((bb_center[1] + bb_height))),
+cv2.rectangle(img, pt1,pt2,
               (0, 255, 0), 2)
+
+# draw keypoints using opencv
+img_width = img.shape[1]
+img_height = img.shape[0]
+for i,point in enumerate(kp):
+    print(f'point:{point}, i:{i}')
+    cv2.circle(img, (int(point.x * img_width), int(point.y * img_height)), 2, (0, 255, 0), 10)
+    cv2.putText(img, str(i), (int(point.x * img_width), int(point.y * img_height)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
 
 #show image
 cv2.imshow('image', img)
