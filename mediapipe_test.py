@@ -32,12 +32,12 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 # STEP 2: Create an FaceDetector object.
-base_options = python.BaseOptions(model_asset_path='mediapipe_model/blaze_face_short_range.tflite')
+base_options = python.BaseOptions(model_asset_path='mediapipe_model\\blaze_face_short_range.tflite')
 options = vision.FaceDetectorOptions(base_options=base_options)
 detector = vision.FaceDetector.create_from_options(options)
 
 # STEP 3: Load the input image.
-img = cv2.imread('faces1.jpg')
+img = cv2.imread('face1.jpg')
 # image = mp.Image.create_from_file('face1.jpg')
 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
