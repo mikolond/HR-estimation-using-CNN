@@ -38,14 +38,14 @@ def load_N_ground_truth(f, N):
         line = f.readline()
         if not line:
             break
-        ground_truth.append(float(line))
+        ground_truth.append(float(line)/60)
     return ground_truth
 
 
 
 # load 1 video
 
-video_path = "test_videos/0.8_20_10.avi"
+video_path = "test_videos/120_30_60.avi"
 cap = cv2.VideoCapture(video_path)
 
 # get video parameters
@@ -63,9 +63,10 @@ print("lenght of ground truth",len(N_truth))
 print("ground truth",N_truth)
 
 # load model
-torch.device("cuda")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("device",device)
 
-model = Extractor()
+model = Extractor().to(device)
 model.init_weights()
 
 # generate sinusoidal signal from the fs and f_true to plot ground true
@@ -83,9 +84,9 @@ plt.savefig("ground_true.png")
 
 # load model 
 
-x = torch.tensor(np.array(N_vid).transpose(0,3,2,1)).float()  # shape (N, C, H, W)
+x = torch.tensor(np.array(N_vid).transpose(0,3,2,1)).float().to(device)  # shape (N, C, H, W)
 print("shape of x",x.shape)
-f_true = N_truth # shape (N)
+f_true = torch.tensor(N_truth).float().to(device)  # shape (N)
 fs = f_s  # shape (1)
 delta = 5/60
 f_range = np.array([1, 150]) / 60
@@ -93,30 +94,27 @@ sampling_f = 1/60
 
 
 # load loss
-criterion = ExtractorLoss()
+criterion = ExtractorLoss().to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.00005)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 i = 0
 train_count = 100
 for i in range(train_count):
+    optimizer.zero_grad()  # Clear gradients
+    output = model(x, N).reshape(1, N)
+    print("output shape", output.shape)
 
-
-    output = model(x,N).reshape(1,N)
-    print("output shape",output.shape)
-
-    output_numpy = output.detach().numpy()
+    output_numpy = output.detach().cpu().numpy()  # Move to CPU for plotting
     # create figure with output plot
     plt.figure()
     plt.plot(output_numpy[0])
     plt.title("Output" + str(i))
     # save figure
-    plt.savefig("graphs/output"+ str(i)+".png")
-
-
+    plt.savefig("graphs/output" + str(i) + ".png")
 
     loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
-    print("loss ",i, ":", loss)
+    print("loss ", i, ":", loss)
     loss.backward()
     optimizer.step()
 

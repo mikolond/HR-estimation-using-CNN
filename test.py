@@ -1,10 +1,6 @@
-def test(a,b=1,c = 2):
+import torch
 
-    return a+b+c
+print(torch.cuda.is_available())
 
-def test2(a ,b = None,c = 2):
-    return test(a,b,c)
-
-
-res = test2(1)
-print(res)
+# print torch version
+print(torch.__version__)
