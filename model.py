@@ -21,8 +21,12 @@ def create_layer(params):
             layer += [nn.ELU(params[i + 1])]
             i += 1
             print("ELU added, i=",i)
-        elif params[i] == "DP": # Dropout
+        elif params[i] == "DP2": # Dropout
             layer += [nn.Dropout2d(params[i + 1])]
+            i += 1
+            print("DP2 added, i=",i)
+        elif params[i] == "DP":
+            layer += [nn.Dropout(params[i + 1])]
             i += 1
             print("DP added, i=",i)
         i += 1
@@ -43,22 +47,23 @@ class Extractor(nn.Module):
         ch = 64 # channels inside the network
         out_ch = 1 # output channels
 
+
         m_k_size = (2,2) # max pooling kernel size
         m_st = (2,2) # max pooling stride
 
         alpha_elu = 1.0 # ELU alpha
 
-        self.conv1 = create_layer(["BN", in_ch,"CONV",in_ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv2 = create_layer(["CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv3 = create_layer(["CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv4 = create_layer(["CONV",ch, out_ch, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", out_ch,"ELU", alpha_elu])
+        self.conv1 = create_layer(["BN", in_ch,"DP2",0.05,"CONV",in_ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv2 = create_layer(["DP",0,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv3 = create_layer(["DP",0,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv4 = create_layer(["DP2",0,"CONV",ch, out_ch, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", out_ch,"ELU", alpha_elu])
 
         self.init_weights()
 
 
-    def forward(self, x, n):
+    def forward(self, x):
         # normalization to [-1, 1]
-        x = x / 255 * 2 - 1
+        # x = x / 255 * 2 - 1
         x = self.conv1(x)
         print("forward x shape, conv1",x.shape)
         x = self.conv2(x)

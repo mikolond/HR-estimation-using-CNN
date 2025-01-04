@@ -68,7 +68,7 @@ def main():
     f = open(text_save_path, "w")
 
     c = 2 * np.pi * args.f / 60 / args.f_s 
-    amplitude = 3
+    amplitude = 10
     # center position of the frame:
     x = WIDTH//2
     y = HEIGHT//2

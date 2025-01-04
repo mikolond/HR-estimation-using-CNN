@@ -49,6 +49,6 @@ class ExtractorLoss(nn.Module):
     def forward(self, x, f_true, fs, delta, sampling_f, f_range):
         l = len(x)
         loss_sum = 0
-        for i in range(len(x)):
+        for i in range(l):
             loss_sum -= self.SNR(x[i], f_true[i], fs, delta, sampling_f, f_range)
         return loss_sum / l

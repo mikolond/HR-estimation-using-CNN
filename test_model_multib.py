@@ -62,8 +62,25 @@ N_truth = load_N_ground_truth(f, N)
 print("lenght of ground truth",len(N_truth))
 print("ground truth",N_truth)
 
+# load 2 video
+
+video2_path = "test_videos/80_30_60.avi"
+cap = cv2.VideoCapture(video2_path)
+
+# get video parameters
+N_vid2 = load_N_frames(cap,192, 128, N)
+print("lenght of sequence",len(N_vid2))
+
+# load ground_truth
+f = open(video2_path.replace(".avi", ".txt"), "r")
+N_truth2 = load_N_ground_truth(f, N)
+print("lenght of ground truth",len(N_truth2))
+print("ground truth",N_truth2)
+
+
 # load model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("device",device)
 
 model = Extractor().to(device)
 model.init_weights()
@@ -82,43 +99,48 @@ plt.savefig("ground_true.png")
 
 
 # load model 
-
-x = torch.tensor(np.array(N_vid).transpose(0,3,2,1)).float().to(device)  # shape (N, C, H, W)
+N_vid_combined = N_vid + N_vid2
+x = torch.tensor(np.array(N_vid_combined).transpose(0, 3, 2, 1)).float().to(device)  # shape (2N, C, H, W)
+# x = torch.tensor(np.array(N_vid).transpose(0,3,2,1)).float().to(device)  # shape (N, C, H, W)
 print("shape of x",x.shape)
-f_true = torch.tensor(N_truth).float().to(device)  # shape (N)
+f_true = torch.tensor(np.array([N_truth[0],N_truth2[0]])).float().to(device)  # shape (N)
 fs = f_s  # shape (1)
 delta = 5/60
 f_range = np.array([1, 150]) / 60
 sampling_f = 1/60
 
-
+print("f_true:",f_true)
 # load loss
 criterion = ExtractorLoss().to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.00005)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 i = 0
 train_count = 100
 for i in range(train_count):
+    optimizer.zero_grad()  # Clear gradients
+    output = model(x).reshape(2,N)
 
 
-    output = model(x,N).reshape(1,N)
-    print("output shape",output.shape)
+    print("output shape", output.shape)
 
-    output_numpy = output.detach().numpy()
+    output_numpy = output.detach().cpu().numpy()  # Move to CPU for plotting
     # create figure with output plot
+    output_numpy = output_numpy.reshape(2*N)
     plt.figure()
-    plt.plot(output_numpy[0])
+    plt.plot(output_numpy)
     plt.title("Output" + str(i))
     # save figure
-    plt.savefig("graphs/output"+ str(i)+".png")
-
-
+    plt.savefig("graphs/output" + str(i) + ".png")
 
     loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
-    print("loss ",i, ":", loss)
+    print("loss ", i, ":", loss)
     loss.backward()
     optimizer.step()
+
+    # multiply learning rate by 0.99 every iteration
+    for param_group in optimizer.param_groups:
+        param_group['lr'] *= 0.8 
 
 pass
 
