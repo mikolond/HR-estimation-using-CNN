@@ -4,6 +4,9 @@ import math
 import argparse
 import os
 
+WIDTH = 128
+HEIGHT = 192
+
 
 def draw_rectangle(x,y,w,h,frame, color=(0, 255, 0)):
     '''
@@ -30,7 +33,7 @@ def main():
     parser = argparse.ArgumentParser(description="Synthetic data generator for hr estimatoin.")
     
     # Add arguments
-    parser.add_argument("f", type=float, help="simulated HR frequency in Hz")
+    parser.add_argument("f", type=int, help="simulated HR frequency in BPM")
     parser.add_argument("f_s", type=int, help="sampling frequency in Hz")
     parser.add_argument("length", type=int, help="length of the video in seconds")
     parser.add_argument("--save_path", help="Path to where you want to save the file", default="test_videos/")
@@ -45,7 +48,7 @@ def main():
     print(f"HR frequency: {args.f}, sampling frequency: {args.f_s}, length: {args.length}")
 
 
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Codec
+    fourcc = cv2.VideoWriter_fourcc(*'I420')  # Codec -> Uncompressed format
     if args.save_path != "test_videos/":
         if args.file_name == "unknown":
             save_path = args.save_path + str(args.f) + "_" + str(args.f_s) + "_" + str(args.length) + ".avi"
@@ -59,23 +62,23 @@ def main():
             save_path = "test_videos/" + str(args.f) + "_" + str(args.f_s) + "_" + str(args.length) + ".avi"
         else:
             save_path = "test_videos/" + args.file_name + ".avi"
-    out = cv2.VideoWriter(save_path, fourcc, args.f_s, (640, 480))
+    out = cv2.VideoWriter(save_path, fourcc, args.f_s, (WIDTH, HEIGHT))
     # create txt file with HR Frequency in bps
     text_save_path = save_path.replace(".avi", ".txt")
     f = open(text_save_path, "w")
 
-    c = 2 * np.pi * args.f  / args.f_s 
-    amplitude = 5
+    c = 2 * np.pi * args.f / 60 / args.f_s 
+    amplitude = 3
     # center position of the frame:
-    x = 320
-    y = 240
-    width = 200
-    height = 300
+    x = WIDTH//2
+    y = HEIGHT//2
+    width = WIDTH-50
+    height = HEIGHT-70
     for i in range(args.f_s * args.length):
         #load frame from bajt.mp4
         ret, frame = cap.read()
         # resize frame
-        frame = cv2.resize(frame, (640, 480))
+        frame = cv2.resize(frame, (WIDTH, HEIGHT))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if not ret:
             break
