@@ -97,11 +97,11 @@ plt.plot(signal)
 plt.title("Ground True")
 plt.savefig("ground_true.png")
 
+# example of 2 batch input
 
 # load model 
 N_vid_combined = N_vid + N_vid2
 x = torch.tensor(np.array(N_vid_combined).transpose(0, 3, 2, 1)).float().to(device)  # shape (2N, C, H, W)
-# x = torch.tensor(np.array(N_vid).transpose(0,3,2,1)).float().to(device)  # shape (N, C, H, W)
 print("shape of x",x.shape)
 f_true = torch.tensor(np.array([N_truth[0],N_truth2[0]])).float().to(device)  # shape (N)
 fs = f_s  # shape (1)
