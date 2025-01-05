@@ -45,7 +45,7 @@ def load_N_ground_truth(f, N):
 
 # load 1 video
 
-video_path = "test_videos/120_30_60.avi"
+video_path = "test_videos/120_30_3.avi"
 cap = cv2.VideoCapture(video_path)
 
 # get video parameters
@@ -64,7 +64,7 @@ print("ground truth",N_truth)
 
 # load 2 video
 
-video2_path = "test_videos/80_30_60.avi"
+video2_path = "test_videos/80_30_3.avi"
 cap = cv2.VideoCapture(video2_path)
 
 # get video parameters
@@ -133,7 +133,13 @@ for i in range(train_count):
     # save figure
     plt.savefig("graphs/output" + str(i) + ".png")
 
-    loss = criterion(output, f_true, fs, delta, sampling_f, f_range)
+    print("output device",output.device)
+    print("f_true device",f_true.device)
+    print("fs device",fs.device)
+    print("delta device",delta.device)
+    print("sampling_f device",sampling_f.device)
+    print("f_range device",f_range.device)
+    loss = criterion(output, f_true, [fs,fs], delta, sampling_f, f_range)
     print("loss ", i, ":", loss)
     loss.backward()
     optimizer.step()
