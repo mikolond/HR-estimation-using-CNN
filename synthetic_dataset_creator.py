@@ -32,7 +32,6 @@ for video in video_filenames:
 
         # save frame
         path = dataset_folder_path + "video_" + str(video_count) + "\\"
-        print("save path:",path)
         cv2.imwrite(path + str(i)+".png", frame)
     cap.release()
     # copy the txt to the dataset folder

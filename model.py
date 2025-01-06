@@ -54,9 +54,9 @@ class Extractor(nn.Module):
         alpha_elu = 1.0 # ELU alpha
 
         self.conv1 = create_layer(["BN", in_ch,"DP2",0.05,"CONV",in_ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv2 = create_layer(["DP",0,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv3 = create_layer(["DP",0,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv4 = create_layer(["DP2",0,"CONV",ch, out_ch, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", out_ch,"ELU", alpha_elu])
+        self.conv2 = create_layer(["DP",0.05,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv3 = create_layer(["DP",0.05,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv4 = create_layer(["DP2",0.05,"CONV",ch, out_ch, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", out_ch,"ELU", alpha_elu])
 
         self.init_weights()
 
@@ -65,13 +65,9 @@ class Extractor(nn.Module):
         # normalization to [-1, 1]
         # x = x / 255 * 2 - 1
         x = self.conv1(x)
-        print("forward x shape, conv1",x.shape)
         x = self.conv2(x)
-        print("forward x shape, conv2",x.shape)
         x = self.conv3(x)
-        print("forward x shape, conv3",x.shape)
         x = self.conv4(x)
-        print("forward x shape, conv4",x.shape)
         return x
 
     def init_weights(self):
@@ -79,3 +75,11 @@ class Extractor(nn.Module):
             if type(layer) == nn.Conv2d:
                 nn.init.xavier_uniform_(layer.weight)
                 nn.init.zeros_(layer.bias)
+
+
+class Estimator(nn.Module):
+    def __init__(self):
+        super(Extractor, self).__init__()
+
+    def forward(self, x):
+        return x

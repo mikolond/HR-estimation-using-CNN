@@ -34,7 +34,7 @@ class ExtractorLoss(nn.Module):
         f_min, f_max = f_range
         # list of wanted and unwanted frequencies
         f_wanted =list(torch.arange(f_true - delta, f_true + delta + sampling_f, sampling_f))
-        print("f_min",f_min, "f_true",f_true, "delta",delta, "f_max",f_max)
+        # print("f_min",f_min, "f_true",f_true, "delta",delta, "f_max",f_max)
         f_unwanted = list(torch.arange(f_min, f_true - delta, sampling_f)) + list(torch.arange(f_true + delta + sampling_f, f_max + sampling_f, sampling_f))
         term1 = 0
         term2 = 0
