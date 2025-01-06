@@ -7,10 +7,12 @@ import numpy as np
 
 
 class DatasetLoader:
-    def __init__(self, dataset_path, videos, N = 100):
+    def __init__(self, dataset_path, videos, N=100, step_size=1):
         self.dataset_path = dataset_path
         self.videos = videos
         self.N = N
+        self.step_size = step_size
+        self.last_sequence_loaded = False
 
         # check if the dataset path exists
         if not os.path.exists(self.dataset_path):
@@ -25,21 +27,23 @@ class DatasetLoader:
 
     def next_sequence(self):
         '''
-        Load the next frame
+        Load the next frames according to the step_size
         return: frame
         '''
         self.current_N_sequence += 1
-        frame_to_load = self.current_image + self.N
-        if frame_to_load < self.current_video_frames_count:
-            frame = cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + str(frame_to_load) + ".png")
-            self.frames = np.roll(self.frames, -1, axis=0)
-            self.frames[-1] = frame
-            self.current_image += 1
+        frames_to_load = [i for i in range(self.current_image + self.N, self.current_image + self.N + self.step_size)]
+        if frames_to_load[-1] < self.current_video_frames_count:
+            for frame_id in frames_to_load:
+                frame = cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + str(frame_id) + ".png")
+                self.frames = np.roll(self.frames, -1, axis=0)
+                self.frames[-1:] = frame
+                self.current_image += 1
 
-            # delete forst hr data in current hr data
-            self.current_hr_data = np.roll(self.current_hr_data, -1)
-            # load new hr data
-            self.current_hr_data[-1] = int(self.hr_data.readline())
+                # delete first hr data in current hr data
+                self.current_hr_data = np.roll(self.current_hr_data, -1)
+                # load new hr data
+                self.current_hr_data[-1] = int(self.hr_data.readline())
+
             self.current_hr = np.mean(self.current_hr_data)
             return True
         else:
@@ -47,23 +51,48 @@ class DatasetLoader:
             self.current_video_idx += 1
             if self.current_video_idx >= len(self.videos):
                 return False
-            self.current_video = self.videos[self.current_video_idx]
-            self.current_video_frames_count = len(os.listdir(self.dataset_path + "\\" + self.current_video)) - 2
-            self.current_image = 0
-            self.frames = np.zeros((self.N, *cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + "0.png").shape), dtype=np.uint8)
-            # load the next hr data
-            self.hr_data.close()
-            self.hr_data = open(self.dataset_path + "\\" + self.current_video + "\\hr_data.txt", "r")
-            self.current_hr_data = np.array([int(self.hr_data.readline()) for i in range(self.N)])
-            self.current_hr = np.mean(self.current_hr_data)
-
-            # load first N frames
-            for i in range(self.N):
-                frame = cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + str(i) + ".png")
-                self.frames[i] = frame
-            frame = cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + str(self.N) + ".png")
+            self.load_next_video()
             return True
+
+    def load_next_video(self):
+        '''
+        Load the next video and initialize frames and hr data
+        '''
+
+        self.current_video = self.videos[self.current_video_idx]
+        images_count = len(os.listdir(self.dataset_path + "\\" + self.current_video)) - 2
+        self.current_sequences = (images_count - self.N) // self.step_size + 1
+        self.current_video_frames_count = images_count
+        self.current_image = 0
+        self.frames = np.zeros((self.N, *cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + "0.png").shape), dtype=np.uint8)
+        # load the next hr data
+        self.hr_data = open(self.dataset_path + "\\" + self.current_video + "\\hr_data.txt", "r")
+        self.current_hr_data = np.array([int(self.hr_data.readline()) for i in range(self.N)])
+        self.current_hr = np.mean(self.current_hr_data)
+
+        # load first N frames
+        for i in range(self.N):
+            frame = cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + str(i) + ".png")
+            self.frames[i] = frame
     
+    def reset(self):
+        '''
+        Reset the dataset loader
+        '''
+        self.N_sequences = 0
+        for video in self.videos:
+            images_count = len(os.listdir(self.dataset_path + "\\" + video)) - 2
+            self.N_sequences += (images_count - self.N) // self.step_size + 1
+        
+        # shuffle the videos
+        self.current_video_idx = 0
+        random.shuffle(self.videos)
+        self.load_next_video()
+        self.current_N_sequence = 0
+
+        self.fps_data = open(self.dataset_path + "\\" + self.current_video + "\\fps.txt", "r")
+        self.current_fps = int(self.fps_data.readline())
+
     def get_sequence(self):
         '''
         Return the current frames
@@ -91,47 +120,13 @@ class DatasetLoader:
         return: float
         '''
         return [self.current_N_sequence , self.N_sequences]
-    
-    def reset(self):
-        '''
-        Reset the dataset loader
-        '''
-        self.N_sequences = 0
-        for video in self.videos:
-            images_count = len(os.listdir(self.dataset_path + "\\" + video)) -2
-            self.N_sequences += images_count - self.N + 1
-        
-        # shuffle the videos
-        self.current_video_idx = 0
-        random.shuffle(self.videos)
-        self.current_video = self.videos[self.current_video_idx]
-        self.current_image = 0
-        self.current_video_frames_count = len(os.listdir(self.dataset_path + "\\" + self.current_video)) - 2
-        if self.N > self.current_video_frames_count:
-            raise Exception("N is greater than the number of frames in the video")
-        
-        self.frames = np.zeros((self.N, *cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + "0.png").shape), dtype=np.uint8)
-        # load first N frames
-        for i in range(self.N):
-            frame = cv2.imread(self.dataset_path + "\\" + self.current_video + "\\" + str(i) + ".png")
-            self.frames[i] = frame
-
-        self.current_N_sequence = 0
-
-        self.hr_data = open(self.dataset_path + "\\" + self.current_video + "\\hr_data.txt", "r")
-        self.fps_data = open(self.dataset_path + "\\" + self.current_video + "\\fps.txt", "r")
-
-        # load first N lines in the hr_data file
-        self.current_hr_data = np.array([int(self.hr_data.readline()) for i in range(self.N)])
-        self.current_hr = np.mean(self.current_hr_data)
-        self.current_fps = int(self.fps_data.readline())
 
 
 
 if __name__ == "__main__":
     dataset_path = "C:\\projects\\dataset_synthetic_output"
-    videos = ["video_0", "video_1","video_2"]
-    loader = DatasetLoader(dataset_path, videos, N = 80)
+    videos = ["video_0", "video_1"]
+    loader = DatasetLoader(dataset_path, ["video_0","video_1"], N = 88, step_size=1)
     sequences_array = []
     i = 0
     done = False
@@ -142,6 +137,7 @@ if __name__ == "__main__":
         fps = loader.get_fps()
         sequences_array.append(deepcopy(frames))
         done = not loader.next_sequence()
+        i+=1
         print("Progress", loader.progress(), "HR", hr, "FPS", fps)
     print("N_sequences", loader.N_sequences)
     print("Number of sequences", len(sequences_array))
@@ -157,6 +153,7 @@ if __name__ == "__main__":
         fps = loader.get_fps()
         sequences_array.append(deepcopy(frames))
         done = not loader.next_sequence()
+        i+=1
         print("Progress", loader.progress(), "HR", hr, "FPS", fps)
     print("N_sequences", loader.N_sequences)
     print("Number of sequences", len(sequences_array))
