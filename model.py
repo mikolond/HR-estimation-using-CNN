@@ -63,7 +63,7 @@ class Extractor(nn.Module):
 
     def forward(self, x):
         # normalization to [-1, 1]
-        # x = x / 255 * 2 - 1
+        x = x / 255 * 2 - 1
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
@@ -76,10 +76,42 @@ class Extractor(nn.Module):
                 nn.init.xavier_uniform_(layer.weight)
                 nn.init.zeros_(layer.bias)
 
+def create_layer_est(params):
+    layer = []
+    i = 0
+    while i <= len(params) - 1:
+        if params[i] == "BN": # Batch Normalization
+            layer += [nn.BatchNorm1d(params[i + 1])]
+            i += 1
+            print("BN added, i=",i)
+        elif params[i] == "CONV": # Convolutional Layer
+            layer += [nn.Conv1d(params[i + 1], params[i + 2], kernel_size=params[i + 3], stride=params[i + 4], padding=params[i + 5])]
+            i += 5
+            print("CONV added, i=",i)
+        elif params[i] == "MP": # Max Pooling
+            layer += [nn.MaxPool1d(kernel_size=params[i + 1], stride=params[i + 2])]
+            i += 2
+            print("MP added, i=",i)
+        elif params[i] == "ELU": # Exponential Linear Unit
+            layer += [nn.ELU(params[i + 1])]
+            i += 1
+            print("ELU added, i=",i)
+        elif params[i] == "DP":
+            layer += [nn.Dropout(params[i + 1])]
+            i += 1
+            print("DP added, i=",i)
+        i += 1
+    
+    return nn.Sequential(*layer)
+
 
 class Estimator(nn.Module):
     def __init__(self):
         super(Extractor, self).__init__()
+
+
+
+        self.conv1 = create_layer_est(["BN", 1,"DP",0.05,"CONV",1, 64, 5, 1, 2,"MP",2, 2, "BN", 64,"ELU", 1.0])
 
     def forward(self, x):
         return x

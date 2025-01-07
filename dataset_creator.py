@@ -119,7 +119,8 @@ class DatasetCreator:
 
         data = []
         for i in range(len(time_ref)):
-            data.append(abs(int(hr_data[int(time_ref[i][1])+1][hr_data_index])))
+            #print("index: ", int(time_ref[i][1])+1, "hr data index: ", hr_data_index, "hr data shape: ", len(hr_data))
+            data.append(abs(int(hr_data[int(time_ref[i][1])][hr_data_index])))
         
         return data
 
@@ -278,8 +279,8 @@ class DatasetCreator:
 
 
 if __name__ == '__main__':
-    path_in = "C:\projects\dataset_creator_test"
-    path_out = "C:\projects\dataset_creator_test_output"
+    path_in = "D:\\diplomka\\ecg_fitness\\unzipped"
+    path_out = "C:\\projects\\dataset_creator_test_output"
     flag = "ecg-fitness-bb"
     dataset_creator = DatasetCreator(path_in, path_out, flag)
     dataset_creator.create_dataset()
