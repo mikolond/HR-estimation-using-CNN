@@ -91,7 +91,7 @@ class DatasetLoader:
         self.current_N_sequence = 0
 
         self.fps_data = open(self.dataset_path + "\\" + self.current_video + "\\fps.txt", "r")
-        self.current_fps = int(self.fps_data.readline())
+        self.current_fps = float((self.fps_data.readline()))
 
     def get_sequence(self):
         '''

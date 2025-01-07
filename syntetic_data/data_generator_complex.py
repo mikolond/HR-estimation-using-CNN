@@ -16,6 +16,8 @@ HR_FREQ_END = 120
 
 AMPLITUDE = 3
 
+DEBUG = True
+
 
 def draw_rectangle(x,y,w,h,frame, color=(0, 255, 0)):
     '''
@@ -109,6 +111,7 @@ def main():
     width = WIDTH-50
     height = HEIGHT-70
 
+    sin_ic_array = []
     if args.f != 0:
         c = 2 * np.pi * args.f / 60 / args.f_s 
         for i in range(args.f_s * args.length):
@@ -121,7 +124,8 @@ def main():
                 break
             # draw rectangle on the frame
             r_rand, g_rand, b_rand = np.random.rand(3)*0.1 +1
-            color = (180 + math.sin(i*c)*amplitude*r_rand, 80 + math.sin(i*c)*amplitude*g_rand, 100 + math.sin(i*c)*amplitude*b_rand)
+            color = (180 + math.sin(i*c)*amplitude*r_rand, 80 - math.sin(i*c)*amplitude*g_rand, 100 - math.sin(i*c)*amplitude*b_rand)
+            sin_ic_array.append(math.sin(i*c)*amplitude * r_rand)
             x_new = x  + np.random.randint(-20,20)
             y_new = y + np.random.randint(-20, 20)
             frame = draw_rectangle(x_new, y_new, width, height, frame, color)
@@ -131,9 +135,13 @@ def main():
             f.write(str(args.f) + "\n")
             print("Frame ", i, end="\r")
     elif args.f == 0:
-        sin_ic_array = []
+        frame_count = 0
+        phase = 0  # Initialize phase
         for i in range(args.f_s * args.length):
-            c = 2 * np.pi * f_array[i] / 60 / args.f_s
+            if frame_count == 0:
+                c = 2 * np.pi * f_array[i] / 60 / args.f_s
+                period_frames = int(args.f_s * 60 / f_array[i])
+                frame_count = period_frames
             #load frame from bajt.mp4
             ret, frame = cap.read()
             # resize frame
@@ -143,8 +151,8 @@ def main():
                 break
             # draw rectangle on the frame
             r_rand, g_rand, b_rand = np.random.rand(3)*0.1 +1
-            color = (180 + math.sin(i*c)*amplitude*r_rand, 80 + math.sin(i*c)*amplitude*g_rand, 100 + math.sin(i*c)*amplitude*b_rand)
-            sin_ic_array.append(math.sin(i*c)*amplitude)
+            color = (180 + math.sin(phase)*amplitude*r_rand, 80 - math.sin(phase)*amplitude*g_rand, 100 - math.sin(phase)*amplitude*b_rand)
+            sin_ic_array.append(math.sin(phase)*amplitude*r_rand)
             x_new = x  + np.random.randint(-20,20)
             y_new = y + np.random.randint(-20, 20)
             frame = draw_rectangle(x_new, y_new, width, height, frame, color)
@@ -153,10 +161,16 @@ def main():
             out.write(static_image)
             f.write(str(int(f_array[i])) + "\n")
             print("Frame ", i, end="\r")
+            
+            phase += c  # Increment phase smoothly
+            frame_count -= 1
 
-    from matplotlib import pyplot as plt
-    plt.plot(sin_ic_array)
-    plt.show()
+    if DEBUG:
+        from matplotlib import pyplot as plt
+        plt.plot(sin_ic_array)
+        plt.savefig("sin_ic_array.png")
+        plt.show()
+
 
     # Release everything when done
     out.release()
