@@ -34,7 +34,7 @@ if __name__ == "__main__":
     loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", ["video_0"], N=N)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device", device)
-    inference = ExtractorInference("model.pth", loader, device)
+    inference = ExtractorInference("model_second_try_lr_1e-4.pth", loader, device)
     inference.infer()
 
 
