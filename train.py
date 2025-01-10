@@ -5,6 +5,7 @@ from dataset_loader import DatasetLoader
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+import os
 
 N = 70 # length of the frame sequence
 delta = 5/60 # offset from the true frequency
@@ -27,13 +28,20 @@ class ExtractorTrainer:
         self.model = Extractor().to(self.device)
         self.model.init_weights()
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.0001)
         self.validation_loss_log = []
         self.current_epoch = 0
         self.current_epoch_time = 0
         self.last_epoch_time = 0
 
+
+    def load_model(self, model_path):
+        self.model.load_state_dict(torch.load(model_path))
+
     def train(self):
+        #  create another folder for model weights
+        if not os.path.exists("model_weights"):
+            os.makedirs("model_weights")
         for i in range(self.num_epochs):
             self.current_epoch = i
             start_time = time.time()
@@ -60,6 +68,8 @@ class ExtractorTrainer:
             self.last_epoch_time = self.current_epoch_time
             print("epoch", i, "done")
             print("validation loss", self.validation_loss_log)
+            # save weights of this epoch
+            torch.save(self.model.state_dict(), "model_weights/model_epoch_" + str(i) + ".pth")
         self.plot_validation_loss()
 
     def create_batch(self):
@@ -129,16 +139,16 @@ class ExtractorTrainer:
 
 if __name__ == "__main__":
     train_videos_list = []
-    for i in range(0,75):
+    for i in range(0,70):
         train_videos_list.append("video_" + str(i))
     valid_videos_list = []
-    for i in range(75, 84):
+    for i in range(70, 80):
         valid_videos_list.append("video_" + str(i))
-    train_data_loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", train_videos_list, N=N, step_size=40)
-    valid_data_loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", valid_videos_list, N=N, step_size=40)
+    train_data_loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", train_videos_list, N=N, step_size=N)
+    valid_data_loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", valid_videos_list, N=N, step_size=N)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device", device)
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, debug=DEBUG)
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=LEARING_RATE, debug=DEBUG)
+    trainer.load_model("model_second_try_lr_1e-4.pth")
     trainer.train()
     trainer.save_model()
-    
