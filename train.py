@@ -7,17 +7,17 @@ import time
 import matplotlib.pyplot as plt
 import os
 
-N = 70 # length of the frame sequence
+N =  170# length of the frame sequence
 delta = 5/60 # offset from the true frequency
 f_range = np.array([20, 220]) / 60 # all possible frequencies
 sampling_f = 1/60 # sampling frequency in loss calculating
-
-LEARING_RATE = 0.00001
+BATCH_SIZE = 1
+LEARING_RATE = 0.0000001
 
 DEBUG = False
 
 class ExtractorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=2, num_epochs=5, debug=False):
+    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False):
         self.train_data_loader = train_data_loader
         self.valid_data_loader = valid_data_loader
         self.device = device
@@ -28,7 +28,8 @@ class ExtractorTrainer:
         self.model = Extractor().to(self.device)
         self.model.init_weights()
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.7)
         self.validation_loss_log = []
         self.current_epoch = 0
         self.current_epoch_time = 0
@@ -139,16 +140,16 @@ class ExtractorTrainer:
 
 if __name__ == "__main__":
     train_videos_list = []
-    for i in range(0,70):
+    for i in range(0,16):
         train_videos_list.append("video_" + str(i))
     valid_videos_list = []
-    for i in range(70, 80):
+    for i in range(16, 20):
         valid_videos_list.append("video_" + str(i))
     train_data_loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", train_videos_list, N=N, step_size=N)
     valid_data_loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", valid_videos_list, N=N, step_size=N)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device", device)
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=LEARING_RATE, debug=DEBUG)
-    trainer.load_model("model_second_try_lr_1e-4.pth")
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=LEARING_RATE, debug=DEBUG, batch_size=BATCH_SIZE, num_epochs=5)
+    trainer.load_model("model_weights\\model_epoch_4.pth")
     trainer.train()
     trainer.save_model()

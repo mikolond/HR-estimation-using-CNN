@@ -53,10 +53,10 @@ class Extractor(nn.Module):
 
         alpha_elu = 1.0 # ELU alpha
 
-        self.conv1 = create_layer(["BN", in_ch,"DP2",0,"CONV",in_ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv2 = create_layer(["DP",0,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv3 = create_layer(["DP",0,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv4 = create_layer(["DP2",0,"CONV",ch, out_ch, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", out_ch,"ELU", alpha_elu])
+        self.conv1 = create_layer(["BN", in_ch,"DP2",0.05,"CONV",in_ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv2 = create_layer(["DP",0.05,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv3 = create_layer(["DP",0.05,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv4 = create_layer(["DP2",0.05,"CONV",ch, out_ch, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", out_ch,"ELU", alpha_elu])
 
         self.init_weights()
 
