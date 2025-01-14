@@ -9,7 +9,7 @@ N = 200 # length of the frame sequence
 
 # MODEL_WEIGHTS = "model_second_try_lr_1e-4.pth"
 # MODEL_WEIGHTS = "model_first_try_lr_1e-4.pth"
-MODEL_WEIGHTS = "model_weights\\model_epoch_4.pth"
+MODEL_WEIGHTS = "model_weights\\model_epoch_14.pth"
 # MODEL_WEIGHTS = "model.pth"
 # MODEL_WEIGHTS = "model_synthetic_N170.pth"
 
@@ -72,7 +72,7 @@ class ExtractorInference:
         plt.show()
 
 if __name__ == "__main__":
-    loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", ["video_5"], N=N)
+    loader = DatasetLoader("C:\\projects\\dataset_synthetic_output", ["video_4"], N=N)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device", device)
     inference = ExtractorInference(MODEL_WEIGHTS, loader, device)

@@ -6,13 +6,20 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 import os
+from torch.utils.tensorboard import SummaryWriter
 
 N =  170# length of the frame sequence
 delta = 5/60 # offset from the true frequency
 f_range = np.array([20, 220]) / 60 # all possible frequencies
 sampling_f = 1/60 # sampling frequency in loss calculating
 BATCH_SIZE = 1
-LEARING_RATE = 0.0000001
+ARTIFICIAL_BATCH_SIZE = 20
+LEARING_RATE = 0.0001
+NUM_EPOCHS = 5
+
+DECRESING_LEARNING_RATE = False
+DEECREASING_RATE = 0.5
+NUM_EPOCHS_TO_DECRESING = 2
 
 DEBUG = False
 
@@ -34,6 +41,10 @@ class ExtractorTrainer:
         self.current_epoch = 0
         self.current_epoch_time = 0
         self.last_epoch_time = 0
+        if not os.path.exists('net-'+str(learning_rate)[0:10]):
+            os.makedirs('net-'+str(learning_rate)[0:10])
+
+        self.writer = SummaryWriter('net-'+str(learning_rate)[0:10]+'/')
 
 
     def load_model(self, model_path):
@@ -48,21 +59,38 @@ class ExtractorTrainer:
             start_time = time.time()
             self.model.train()
             epoch_done = False
+            train_counter = 1
             while not epoch_done:
-                self.optimizer.zero_grad()
+                epoch_start = time.time()
                 sequence, f_true, fs, n_of_sequences, epoch_done = self.create_batch()
                 if n_of_sequences != 0:
+                    before_x = time.time()
                     x = torch.tensor(sequence.reshape(n_of_sequences * N, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
                     if self.debug:
                         print("shape of x", x.shape)
                     f_true = torch.tensor(f_true).float().to(self.device)
+                    before_infer = time.time()
                     output = self.model(x).reshape(n_of_sequences, N)
                     if self.debug:
                         print("output shape", output.shape)
+                    before_loss = time.time()
                     loss = self.loss_fc(output, f_true, fs, delta, sampling_f, f_range)
-                    self.log_progress(loss, start_time)
+                    self.log_progress(loss.item(), start_time, train_counter)
+                    before_backward = time.time()
                     loss.backward()
-                    self.optimizer.step()
+                    if train_counter % ARTIFICIAL_BATCH_SIZE == 0:
+                        before_optimizer = time.time()
+                        self.optimizer.step()
+                        self.optimizer.zero_grad()
+  
+                    # print all times
+                    if self.debug:
+                        print("Time taken for x:", before_infer - before_x)
+                        print("Time taken for inference:", before_loss - before_infer)
+                        print("Time taken for loss calculation:", before_backward - before_loss)
+                        print("Time taken for backward pass:", before_optimizer - before_backward)
+                        print("Time taken for optimizer step:", time.time() - before_optimizer)
+                train_counter += 1
             self.validate()
             self.train_data_loader.reset()
             self.valid_data_loader.reset()
@@ -71,6 +99,12 @@ class ExtractorTrainer:
             print("validation loss", self.validation_loss_log)
             # save weights of this epoch
             torch.save(self.model.state_dict(), "model_weights/model_epoch_" + str(i) + ".pth")
+            # decrease learning rate
+            if DECRESING_LEARNING_RATE and i % NUM_EPOCHS_TO_DECRESING == 0:
+                self.learning_rate *= DEECREASING_RATE
+                for param_group in self.optimizer.param_groups:
+                    param_group['lr'] = self.learning_rate
+        self.writer.flush()
         self.plot_validation_loss()
 
     def create_batch(self):
@@ -92,7 +126,8 @@ class ExtractorTrainer:
                 break
         return sequence[:n_of_sequences], f_true[:n_of_sequences], fs[:n_of_sequences], n_of_sequences, epoch_done
 
-    def log_progress(self, loss, start_time):
+    def log_progress(self, loss, start_time, counter):
+        self.writer.add_scalar("Loss/train" + str(self.current_epoch), loss, counter)
         epoch_progress = self.train_data_loader.progress()
         time_passed = time.time() - start_time
         self.current_epoch_time = time_passed/epoch_progress[0] * epoch_progress[1]
@@ -102,7 +137,7 @@ class ExtractorTrainer:
         estimated_time_minutes = estimated_time // 60
         estimated_time_hours = estimated_time_minutes // 60
         percentage_progress = epoch_progress[0] / epoch_progress[1] * 100
-        print("loss:{:.4f}".format(loss.item()), ",progress:", int(percentage_progress), "% ,eta:", estimated_time_hours, "h and", estimated_time_minutes % 60, "m")
+        print("loss:{:.4f}".format(loss), ",progress:", int(percentage_progress), "% ,eta:", estimated_time_hours, "h and", estimated_time_minutes % 60, "m")
 
     def validate(self):
         self.model.eval()
@@ -124,7 +159,7 @@ class ExtractorTrainer:
                 valid_count += 1
                 validation_done = not self.valid_data_loader.next_sequence()
             valid_loss /= valid_count
-            print("valid loss", valid_loss)
+            self.writer.add_scalar("Loss/valid", valid_loss, self.current_epoch)
             self.validation_loss_log.append(valid_loss.detach().cpu().numpy().item())
 
     def plot_validation_loss(self):
@@ -140,16 +175,15 @@ class ExtractorTrainer:
 
 if __name__ == "__main__":
     train_videos_list = []
-    for i in range(0,16):
+    for i in range(0,180):
         train_videos_list.append("video_" + str(i))
     valid_videos_list = []
-    for i in range(16, 20):
+    for i in range(180, 191):
         valid_videos_list.append("video_" + str(i))
     train_data_loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", train_videos_list, N=N, step_size=N)
     valid_data_loader = DatasetLoader("C:\\projects\\dataset_creator_test_output", valid_videos_list, N=N, step_size=N)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device", device)
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=LEARING_RATE, debug=DEBUG, batch_size=BATCH_SIZE, num_epochs=5)
-    trainer.load_model("model_weights\\model_epoch_4.pth")
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=LEARING_RATE, debug=DEBUG, batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS)
+    # trainer.load_model("model_weights\\model_epoch_14.pth")
     trainer.train()
-    trainer.save_model()

@@ -19,7 +19,7 @@ class DatasetCreator:
         self.actual_file = None
         self.fps = None
         self.frame_count = 0
-        self.video_out_counter = 0
+        self.video_out_counter = 84
 
     def load_video(self, path):
         self.cap = cv2.VideoCapture(path)
@@ -280,7 +280,7 @@ class DatasetCreator:
 
 if __name__ == '__main__':
     path_in = "D:\\diplomka\\ecg_fitness\\unzipped"
-    path_out = "C:\\projects\\dataset_creator_test_output"
+    path_out = "C:\\projects\\dataset_10_16"
     flag = "ecg-fitness-bb"
     dataset_creator = DatasetCreator(path_in, path_out, flag)
     dataset_creator.create_dataset()
