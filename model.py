@@ -8,27 +8,27 @@ def create_layer(params):
         if params[i] == "BN": # Batch Normalization
             layer += [nn.BatchNorm2d(params[i + 1])]
             i += 1
-            print("BN added, i=",i)
+            # print("BN added, i=",i)
         elif params[i] == "CONV": # Convolutional Layer
             layer += [nn.Conv2d(params[i + 1], params[i + 2], kernel_size=params[i + 3], stride=params[i + 4], padding=params[i + 5])]
             i += 5
-            print("CONV added, i=",i)
+            # print("CONV added, i=",i)
         elif params[i] == "MP": # Max Pooling
             layer += [nn.MaxPool2d(kernel_size=params[i + 1], stride=params[i + 2])]
             i += 2
-            print("MP added, i=",i)
+            # print("MP added, i=",i)
         elif params[i] == "ELU": # Exponential Linear Unit
             layer += [nn.ELU(params[i + 1])]
             i += 1
-            print("ELU added, i=",i)
+            # print("ELU added, i=",i)
         elif params[i] == "DP2": # Dropout
             layer += [nn.Dropout2d(params[i + 1])]
             i += 1
-            print("DP2 added, i=",i)
+            # print("DP2 added, i=",i)
         elif params[i] == "DP":
             layer += [nn.Dropout(params[i + 1])]
             i += 1
-            print("DP added, i=",i)
+            # print("DP added, i=",i)
         i += 1
     
     return nn.Sequential(*layer)
@@ -53,10 +53,11 @@ class Extractor(nn.Module):
 
         alpha_elu = 1.0 # ELU alpha
 
-        self.conv1 = create_layer(["BN", in_ch,"DP2",0.05,"CONV",in_ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv1 = create_layer(["BN", in_ch,"DP2",0,"CONV",in_ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
         self.conv2 = create_layer(["DP",0,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv3 = create_layer(["DP",0.05,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
-        self.conv4 = create_layer(["DP2",0.05,"CONV",ch, out_ch, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", out_ch,"ELU", alpha_elu])
+        self.conv3 = create_layer(["DP",0,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv4 = create_layer(["DP2",0.2,"CONV",ch, ch, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv5 = create_layer(["DP",0.5,"CONV",ch, out_ch, 1, 1, 0])
 
         self.init_weights()
 
@@ -68,6 +69,7 @@ class Extractor(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
+        x = self.conv5(x)
         return x
 
     def init_weights(self):

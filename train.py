@@ -10,16 +10,16 @@ from torch.utils.tensorboard import SummaryWriter
 
 N =  170# length of the frame sequence
 delta = 5/60 # offset from the true frequency
-f_range = np.array([20, 220]) / 60 # all possible frequencies
+f_range = np.array([35, 240]) / 60 # all possible frequencies
 sampling_f = 1/60 # sampling frequency in loss calculating
 BATCH_SIZE = 1
 ARTIFICIAL_BATCH_SIZE = 1
-LEARING_RATE = 1e-5
-NUM_EPOCHS = 5
+LEARING_RATE = 1e-4
+NUM_EPOCHS = 10
 
 DECRESING_LEARNING_RATE = False
-DEECREASING_RATE = 0.5
-NUM_EPOCHS_TO_DECRESING = 2
+DEECREASING_RATE = 0.316
+NUM_EPOCHS_TO_DECRESING = 5
 
 DEBUG = False
 
@@ -52,6 +52,7 @@ class ExtractorTrainer:
         self.model.load_state_dict(torch.load(model_path))
 
     def train(self):
+        print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "artificial batch size:", ARTIFICIAL_BATCH_SIZE,"decreasing learning rate:", DECRESING_LEARNING_RATE, "decreasing rate:", DEECREASING_RATE, "num epochs to decreasing:", NUM_EPOCHS_TO_DECRESING, "N:", N, "delta:", delta, "f_range:", f_range, "sampling_f:", sampling_f)
         #  create another folder for model weights
         if not os.path.exists("model_weights"):
             os.makedirs("model_weights")
@@ -129,7 +130,7 @@ class ExtractorTrainer:
                 break
         return sequence[:n_of_sequences], f_true[:n_of_sequences], fs[:n_of_sequences], n_of_sequences, epoch_done
 
-    def log_progress(self, loss, start_time,counter):
+    def log_progress(self, loss, start_time):
         epoch_progress = self.train_data_loader.progress()
         time_passed = time.time() - start_time
         self.current_epoch_time = time_passed/epoch_progress[0] * epoch_progress[1]
@@ -139,7 +140,7 @@ class ExtractorTrainer:
         estimated_time_minutes = estimated_time // 60
         estimated_time_hours = estimated_time_minutes // 60
         percentage_progress = epoch_progress[0] / epoch_progress[1] * 100
-        print("loss:{:.4f}".format(loss), ",progress:", int(percentage_progress), "% ,eta:", estimated_time_hours, "h and", estimated_time_minutes % 60, "m")
+        print("loss:{:.4f}".format(loss), ",progress:", int(percentage_progress), "% ,eta:", estimated_time_hours, "h and", estimated_time_minutes % 60, "m", end="\r")
 
     def validate(self):
         print("validation")
@@ -162,7 +163,7 @@ class ExtractorTrainer:
                 progress = self.valid_data_loader.progress()
                 percentage_progress = progress[0] / progress[1] * 100
                 valid_count += 1
-                print("loss:{:.4f}".format(valid_loss.item()/valid_count), ",progress:", int(percentage_progress))
+                print("loss:{:.4f}".format(valid_loss.item()/valid_count), ",progress:", int(percentage_progress),"%" , end="\r")
                 validation_done = not self.valid_data_loader.next_sequence()
             valid_loss /= valid_count
             self.writer.add_scalar("Loss/valid", valid_loss, self.current_epoch)
@@ -180,18 +181,16 @@ class ExtractorTrainer:
             torch.save(self.model.state_dict(), "model.pth")
 
 if __name__ == "__main__":
-    train_videos_list = []
-    for i in range(0,165):
-        train_videos_list.append("video_" + str(i))
-    valid_videos_list = []
-    for i in range(165, 192):
-        valid_videos_list.append("video_" + str(i))
-    train_data_loader = DatasetLoader("C:\projects\dataset_creator_test_output", train_videos_list, N=N, step_size=N)
-    valid_data_loader = DatasetLoader("C:\projects\dataset_creator_test_output", valid_videos_list, N=N, step_size=N)
+    train_path = os.path.join("C:\projects\dataset_creator_test_output","train_dataset")
+    valid_path = os.path.join("C:\projects\dataset_creator_test_output","valid_dataset")
+    train_videos_list = os.listdir(train_path)
+    valid_videos_list = os.listdir(valid_path)
+    train_data_loader = DatasetLoader(train_path, train_videos_list, N=N, step_size=N, augmentation=True)
+    valid_data_loader = DatasetLoader(valid_path, valid_videos_list, N=N, step_size=N)
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device("cuda:0")
     print("device", device)
     a = input("continue?")
     trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=LEARING_RATE, debug=DEBUG, batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS)
-    # trainer.load_model(os.path.join("model_weights", "model_epoch_14.pth"))
+    # trainer.load_model(os.path.join("model_weights_backup", "old_model_d5_imp.pth"))
     trainer.train()

@@ -23,18 +23,19 @@ class ExtractorLoss(nn.Module):
         """
         f_min, f_max = f_range
         # Generate wanted and unwanted frequency ranges as tensors
-        f_wanted = torch.arange(f_true - delta, f_true + delta + sampling_f, sampling_f, device=x.device)
-        f_unwanted_1 = torch.arange(f_min, f_true - delta, sampling_f, device=x.device)
+        f_wanted = torch.arange(f_true - delta, f_true + delta, sampling_f, device=x.device)
+        f_unwanted_1 = torch.arange(f_min, max(f_true - delta, f_min), sampling_f, device=x.device)
         f_unwanted_2 = torch.arange(f_true + delta + sampling_f, f_max + sampling_f, sampling_f, device=x.device)
         f_unwanted = torch.cat((f_unwanted_1, f_unwanted_2))
+
 
         # Compute PSD values for wanted and unwanted frequencies
         psd_wanted = torch.stack([self.PSD(x, f, fs) for f in f_wanted])
         psd_unwanted = torch.stack([self.PSD(x, f, fs) for f in f_unwanted])
 
         # Average PSD values
-        term1 = psd_wanted.mean()
-        term2 = psd_unwanted.mean()
+        term1 = psd_wanted.sum()
+        term2 = psd_unwanted.sum()
 
         return 10 * torch.log10(term1 / term2)
 

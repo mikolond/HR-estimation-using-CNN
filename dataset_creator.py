@@ -19,7 +19,7 @@ class DatasetCreator:
         self.actual_file = None
         self.fps = None
         self.frame_count = 0
-        self.video_out_counter = 84
+        self.video_out_counter = 0
 
     def load_video(self, path):
         self.cap = cv2.VideoCapture(path)
@@ -81,7 +81,7 @@ class DatasetCreator:
                     no_face_streak = 0
                 was_face_before = True
             # resize image to 192x128
-            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_NEAREST_EXACT)
+            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_CUBIC)
             resized_face = cv2.cvtColor(resized_face, cv2.COLOR_RGB2BGR)
             # save face to video_out_folder name the file as frame number
             if face is not None:
@@ -217,7 +217,7 @@ class DatasetCreator:
                     no_face_streak = 0
                 was_face_before = True
             # resize image to 192x128
-            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_NEAREST_EXACT)
+            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_CUBIC)
             resized_face = cv2.cvtColor(resized_face, cv2.COLOR_RGB2BGR)
             # save face to video_out_folder name the file as frame number
             if face is not None:
@@ -280,7 +280,7 @@ class DatasetCreator:
 
 if __name__ == '__main__':
     path_in = "D:\\diplomka\\ecg_fitness\\unzipped"
-    path_out = "C:\\projects\\dataset_10_16"
+    path_out = "C:\\projects\\dataset_cubic"
     flag = "ecg-fitness-bb"
     dataset_creator = DatasetCreator(path_in, path_out, flag)
     dataset_creator.create_dataset()

@@ -16,7 +16,7 @@ HR_FREQ_END = 120
 
 AMPLITUDE = 3
 
-DEBUG = True
+DEBUG = False
 
 
 def draw_rectangle(x,y,w,h,frame, color=(0, 255, 0)):
@@ -57,64 +57,71 @@ def main():
     # Parse the arguments
     args = parser.parse_args()
 
+    create_video(args.save_path, args.file_name, args.f, args.f_s, args.length, args.start_frequency, args.end_frequency, args.slope, args.amplitude)
+
+def create_video(save_path, file_name, f, f_s, length, start_frequency, end_frequency, slope, amplitude):
     #load bajt.mp4
     cap = cv2.VideoCapture("bajt.mp4")
 
-    print(f"HR frequency: {args.f}, sampling frequency: {args.f_s}, length: {args.length}")
+    print(f"HR frequency: {f}, sampling frequency: {f_s}, length: {length}")
+    base_color = [180, 80, 100]
+    base_color += np.random.randint(-20,20,3)
 
 
     fourcc = cv2.VideoWriter_fourcc(*'I420')  # Codec -> Uncompressed format
-    if args.save_path != "test_videos/":
-        if args.file_name == "unknown":
-            save_path = args.save_path + str(args.f) + "_" + str(args.f_s) + "_" + str(args.length) + ".avi"
+    if save_path != "test_videos/":
+        if file_name == "unknown":
+            save_path = save_path + str(f) + "_" + str(f_s) + "_" + str(length) + ".avi"
         else:
-            save_path = args.save_path + args.file_name + ".avi"
+            save_path = save_path + file_name + ".avi"
     else:
         # id test_videos doesnt exist create it
         if not os.path.exists("test_videos/"):
             os.makedirs("test_videos/")
-        if args.file_name == "unknown":
-            save_path = "test_videos/" + str(args.f) + "_" + str(args.f_s) + "_" + str(args.length) + ".avi"
+        if file_name == "unknown":
+            save_path = "test_videos/" + str(f) + "_" + str(f_s) + "_" + str(length) + ".avi"
         else:
-            save_path = "test_videos/" + args.file_name + ".avi"
-    out = cv2.VideoWriter(save_path, fourcc, args.f_s, (WIDTH, HEIGHT))
+            save_path = "test_videos/" + file_name + ".avi"
+    out = cv2.VideoWriter(save_path, fourcc, f_s, (WIDTH, HEIGHT))
     # create txt file with HR Frequency in bps
     text_save_path = save_path.replace(".avi", ".txt")
-    f = open(text_save_path, "w")
-    if args.f == 0:
+    f_txt = open(text_save_path, "w")
+    if f == 0:
         f_array = []
-        # generate random HR frequency for args_f_s * args.length samples
-        hr_freq = args.start_frequency
+        # generate random HR frequency for args_f_s * length samples
+        hr_freq = start_frequency
         increasing = True
         
-        for i in range(args.f_s * args.length):
+        for i in range(f_s * length):
             if i % 10 == 0:
                 if increasing:
-                    hr_freq += args.slope
+                    hr_freq += slope
                     # hr_freq += random.uniform(-0.5, 0.5)  # introduce subtle randomness
-                    if hr_freq >= args.end_frequency:
-                        hr_freq = args.end_frequency
+                    if hr_freq >= end_frequency:
+                        hr_freq = end_frequency
                         increasing = False
                 else:
-                    hr_freq -= args.slope
+                    hr_freq -= slope
                     # hr_freq += random.uniform(-0.5, 0.5)  # introduce subtle randomness
-                    if hr_freq <= args.start_frequency:
-                        hr_freq = args.start_frequency
+                    if hr_freq <= start_frequency:
+                        hr_freq = start_frequency
                         increasing = True
             f_array.append(hr_freq)
 
 
-    amplitude = args.amplitude
+
+    amplitude = amplitude
     # center position of the frame:
     x = WIDTH//2
     y = HEIGHT//2
-    width = WIDTH-50
-    height = HEIGHT-70
+    width = 50
+    height = 80
+
 
     sin_ic_array = []
-    if args.f != 0:
-        c = 2 * np.pi * args.f / 60 / args.f_s 
-        for i in range(args.f_s * args.length):
+    if f != 0:
+        c = 2 * np.pi * f / 60 / f_s 
+        for i in range(f_s * length):
             #load frame from bajt.mp4
             ret, frame = cap.read()
             # resize frame
@@ -124,7 +131,7 @@ def main():
                 break
             # draw rectangle on the frame
             r_rand, g_rand, b_rand = np.random.rand(3)*0.1 +1
-            color = (180 + math.sin(i*c)*amplitude*r_rand, 80 - math.sin(i*c)*amplitude*g_rand, 100 - math.sin(i*c)*amplitude*b_rand)
+            color = (base_color[0] + math.sin(i*c)*amplitude*r_rand, base_color[1] - math.sin(i*c)*amplitude*g_rand, base_color[2] - math.sin(i*c)*amplitude*b_rand)
             sin_ic_array.append(math.sin(i*c)*amplitude * r_rand)
             x_new = x  + np.random.randint(-20,20)
             y_new = y + np.random.randint(-20, 20)
@@ -132,15 +139,15 @@ def main():
             # static_array = np.array([[[100 + math.sin(i*c)*amplitude, 100 + math.sin(i*c)*amplitude, 0]] * 640] * 480, dtype=np.uint8) 
             static_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             out.write(static_image)
-            f.write(str(args.f) + "\n")
+            f_txt.write(str(f) + "\n")
             print("Frame ", i, end="\r")
-    elif args.f == 0:
+    elif f == 0:
         frame_count = 0
         phase = 0  # Initialize phase
-        for i in range(args.f_s * args.length):
+        for i in range(f_s * length):
             if frame_count == 0:
-                c = 2 * np.pi * f_array[i] / 60 / args.f_s
-                period_frames = int(args.f_s * 60 / f_array[i])
+                c = 2 * np.pi * f_array[i] / 60 / f_s
+                period_frames = int(f_s * 60 / f_array[i])
                 frame_count = period_frames
             #load frame from bajt.mp4
             ret, frame = cap.read()
@@ -151,7 +158,7 @@ def main():
                 break
             # draw rectangle on the frame
             r_rand, g_rand, b_rand = np.random.rand(3)*0.1 +1
-            color = (180 + math.sin(phase)*amplitude*r_rand, 80 - math.sin(phase)*amplitude*g_rand, 100 - math.sin(phase)*amplitude*b_rand)
+            color = (base_color[0] + math.sin(phase)*amplitude*r_rand, base_color[1] - math.sin(phase)*amplitude*g_rand, base_color[2] - math.sin(phase)*amplitude*b_rand)
             sin_ic_array.append(math.sin(phase)*amplitude*r_rand)
             x_new = x  + np.random.randint(-20,20)
             y_new = y + np.random.randint(-20, 20)
@@ -159,7 +166,7 @@ def main():
             # static_array = np.array([[[100 + math.sin(i*c)*amplitude, 100 + math.sin(i*c)*amplitude, 0]] * 640] * 480, dtype=np.uint8) 
             static_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             out.write(static_image)
-            f.write(str(int(f_array[i])) + "\n")
+            f_txt.write(str(int(f_array[i])) + "\n")
             print("Frame ", i, end="\r")
             
             phase += c  # Increment phase smoothly
@@ -175,10 +182,28 @@ def main():
     # Release everything when done
     out.release()
     print("Video saved!")
-    f.close()
+    f_txt.close()
 
 
 
+if __name__ == "__main__":
+    save_path = "test_videos/"
+    freq_start = 50
+    for i in range(150):
+        # generate 100 videos with different HR frequencies
+        create_video(save_path, str(i), freq_start + i, 30, 60, 0, 0, 0.5, 1)
 
+    pass
+    #create 5 videos with random HR frequencies
+    create_video(save_path, "random1", 0, 30, 60, 110, 200, 0.5, 1)
+    create_video(save_path, "random2", 0, 30, 60, 110, 130, 0.5, 1)
+    create_video(save_path, "random3", 0, 30, 60, 40, 100, 0.3, 1)
+    create_video(save_path, "random4", 0, 30, 60, 50, 120, 0.7, 1)
+    create_video(save_path, "random5", 0, 30, 60, 40, 200, 0.8, 1)
+    create_video(save_path, "random6", 0, 30, 60, 150, 200, 0.3, 1)
+    create_video(save_path, "random7", 0, 30, 60, 60, 80, 0.5, 1)
+    create_video(save_path, "random7", 0, 30, 60, 50, 80, 0.3, 1)
+    create_video(save_path, "random7", 0, 30, 60, 60, 90, 0.8, 1)
 
-main()
+    
+
