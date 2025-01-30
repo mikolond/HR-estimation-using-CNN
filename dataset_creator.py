@@ -81,7 +81,7 @@ class DatasetCreator:
                     no_face_streak = 0
                 was_face_before = True
             # resize image to 192x128
-            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_CUBIC)
+            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_LINEAR_EXACT)
             resized_face = cv2.cvtColor(resized_face, cv2.COLOR_RGB2BGR)
             # save face to video_out_folder name the file as frame number
             if face is not None:
@@ -217,7 +217,7 @@ class DatasetCreator:
                     no_face_streak = 0
                 was_face_before = True
             # resize image to 192x128
-            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_CUBIC)
+            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_LINEAR_EXACT)
             resized_face = cv2.cvtColor(resized_face, cv2.COLOR_RGB2BGR)
             # save face to video_out_folder name the file as frame number
             if face is not None:
@@ -279,9 +279,15 @@ class DatasetCreator:
 
 
 if __name__ == '__main__':
-    path_in = "D:\\diplomka\\ecg_fitness\\unzipped"
-    path_out = "C:\\projects\\dataset_cubic"
-    flag = "ecg-fitness-bb"
+    import argparse
+    parser = argparse.ArgumentParser(description="Create dataset")
+    parser.add_argument("path_in", type=str, help="Path to the folder with videos")
+    parser.add_argument("path_out", type=str, help="Path to the folder where the dataset will be saved")
+    parser.add_argument("flag", type=str, help="Flag to determine the dataset type", default="ecg-fitness-bb")
+    args = parser.parse_args()
+    path_in = args.path_in
+    path_out = args.path_out
+    flag = args.flag
     dataset_creator = DatasetCreator(path_in, path_out, flag)
     dataset_creator.create_dataset()
 

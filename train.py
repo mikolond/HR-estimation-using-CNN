@@ -4,27 +4,26 @@ from loss import ExtractorLoss
 from dataset_loader import DatasetLoader
 import numpy as np
 import time
-# import matplotlib.pyplot as plt
 import os
 from torch.utils.tensorboard import SummaryWriter
 
-N =  170# length of the frame sequence
+N =  160# length of the frame sequence
 delta = 5/60 # offset from the true frequency
-f_range = np.array([35, 240]) / 60 # all possible frequencies
+f_range = np.array([35, 240]) / 60 # possible frequencies boundaries
 sampling_f = 1/60 # sampling frequency in loss calculating
 BATCH_SIZE = 1
 ARTIFICIAL_BATCH_SIZE = 1
 LEARING_RATE = 1e-4
 NUM_EPOCHS = 10
 
-DECRESING_LEARNING_RATE = False
-DEECREASING_RATE = 0.316
-NUM_EPOCHS_TO_DECRESING = 5
+DECRESING_LEARNING_RATE = True
+DEECREASING_RATE = 0.5
+NUM_EPOCHS_TO_DECRESING = 1
 
 DEBUG = False
 
 class ExtractorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False):
+    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False, N=100):
         self.train_data_loader = train_data_loader
         self.valid_data_loader = valid_data_loader
         self.device = device
@@ -33,9 +32,8 @@ class ExtractorTrainer:
         self.num_epochs = num_epochs
         self.debug = debug
         self.model = Extractor().to(self.device)
-        self.model.init_weights()
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, foreach=False)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.7)
         self.validation_loss_log = []
         self.current_epoch = 0
@@ -83,9 +81,13 @@ class ExtractorTrainer:
                     before_backward = time.time()
                     loss.backward()
                     if train_counter % ARTIFICIAL_BATCH_SIZE == 0:
+                        for param in self.model.parameters():
+                            if param.grad is not None:
+                                param.grad.data /= ARTIFICIAL_BATCH_SIZE
                         before_optimizer = time.time()
                         self.optimizer.step()
                         self.optimizer.zero_grad()
+
   
                     # print all times
                     if self.debug:
@@ -99,7 +101,7 @@ class ExtractorTrainer:
             self.train_data_loader.reset()
             self.valid_data_loader.reset()
             self.last_epoch_time = self.current_epoch_time
-            print("epoch", i, "done")
+            print("\nepoch", i, "done")
             print("validation loss", self.validation_loss_log)
             # save weights of this epoch
             torch.save(self.model.state_dict(), "model_weights/model_epoch_" + str(i) + ".pth")
@@ -140,10 +142,15 @@ class ExtractorTrainer:
         estimated_time_minutes = estimated_time // 60
         estimated_time_hours = estimated_time_minutes // 60
         percentage_progress = epoch_progress[0] / epoch_progress[1] * 100
-        print("loss:{:.4f}".format(loss), ",progress:", int(percentage_progress), "% ,eta:", estimated_time_hours, "h and", estimated_time_minutes % 60, "m", end="\r")
+        alpha = 0.99  # Smoothing factor
+        if not hasattr(self, 'ema_loss'):
+            self.ema_loss = loss
+        else:
+            self.ema_loss = alpha * self.ema_loss + (1 - alpha) * loss
+        print("EMA loss:{:.4f}".format(self.ema_loss), ",epoch progress:", int(percentage_progress), "% ,eta:", estimated_time_hours, "h and", estimated_time_minutes % 60, "m", end="\r")
 
     def validate(self):
-        print("validation")
+        print("\nvalidation")
         self.model.eval()
         with torch.no_grad():
             self.valid_data_loader.reset()
@@ -169,28 +176,32 @@ class ExtractorTrainer:
             self.writer.add_scalar("Loss/valid", valid_loss, self.current_epoch)
             self.validation_loss_log.append(valid_loss.detach().cpu().numpy().item())
 
-    # def plot_validation_loss(self):
-    #     plt.figure()
-    #     plt.plot(self.validation_loss_log)
-    #     plt.title("Validation loss")
-    #     plt.show()
-
     def save_model(self):
         user = input("Save model? y/n")
         if user == "y":
             torch.save(self.model.state_dict(), "model.pth")
 
 if __name__ == "__main__":
-    train_path = os.path.join("C:\projects\dataset_creator_test_output","train_dataset")
-    valid_path = os.path.join("C:\projects\dataset_creator_test_output","valid_dataset")
+    import argparse
+    parser = argparse.ArgumentParser(description="Train the model")
+    parser.add_argument("N", type=int, help="Length of the frame sequence", default=N)
+    parser.add_argument("batch_size", type=int, help="Batch size", default=BATCH_SIZE)
+    parser.add_argument("learning_rate", type=float, help="Learning rate", default = LEARING_RATE)
+    parser.add_argument("num_epochs", type=int, help="Number of epochs", default=NUM_EPOCHS)
+    parser.add_argument("train_path", type=str, help="Path to the train dataset", default="dataset/train")
+    parser.add_argument("valid_path", type=str, help="Path to the validation dataset", default="dataset/valid")
+    parser.add_argument("--device", type=str, help="Device to train on", default="cuda:0")
+    args = parser.parse_args()
+    train_path = args.train_path
+    valid_path = args.valid_path
     train_videos_list = os.listdir(train_path)
     valid_videos_list = os.listdir(valid_path)
-    train_data_loader = DatasetLoader(train_path, train_videos_list, N=N, step_size=N, augmentation=True)
-    valid_data_loader = DatasetLoader(valid_path, valid_videos_list, N=N, step_size=N)
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cuda:0")
-    print("device", device)
-    a = input("continue?")
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=LEARING_RATE, debug=DEBUG, batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS)
-    # trainer.load_model(os.path.join("model_weights_backup", "old_model_d5_imp.pth"))
+    train_data_loader = DatasetLoader(train_path, train_videos_list, N=args.N, step_size=args.N, augmentation=True)
+    valid_data_loader = DatasetLoader(valid_path, valid_videos_list, N=args.N, step_size=args.N)
+    if not torch.cuda.is_available():
+        device = torch.device("cpu")
+    else:
+        device = torch.device(args.device)
+
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=args.learning_rate, debug=DEBUG, batch_size=args.batch_size, num_epochs=args.num_epochs)
     trainer.train()
