@@ -1,4 +1,3 @@
-from inference import ExtractorInference
 from model import Extractor
 from loss import ExtractorLoss
 from dataset_loader import DatasetLoader
