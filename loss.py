@@ -9,7 +9,7 @@ class ExtractorLoss(nn.Module):
     
     def PSD(self, x, f_true, fs):
         """
-        Returns power spectra density of given sequence x.
+        Returns power spectral density of given sequence x.
         """
         indices = torch.arange(len(x), dtype=torch.float32, device=x.device)
         angles = 2 * np.pi * f_true * indices / fs
@@ -33,7 +33,7 @@ class ExtractorLoss(nn.Module):
         psd_wanted = torch.stack([self.PSD(x, f, fs) for f in f_wanted])
         psd_unwanted = torch.stack([self.PSD(x, f, fs) for f in f_unwanted])
 
-        # Average PSD values
+        # Sum PSD values
         term1 = psd_wanted.sum()
         term2 = psd_unwanted.sum()
 

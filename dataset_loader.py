@@ -1,7 +1,6 @@
 import os
 import cv2
 import random
-from copy import deepcopy
 import numpy as np
 
 
@@ -9,13 +8,17 @@ DEBUG = False
 
 
 class DatasetLoader:
-    def __init__(self, dataset_path, videos, N=100, step_size=1,augmentation=False):
+    def __init__(self, dataset_path, videos = None, N=100, step_size=1,augmentation=False):
         self.dataset_path = dataset_path
-        self.videos = videos
+        if videos is None:
+            self.videos = os.listdir(dataset_path)
+        else:
+            self.videos = videos
         self.N = N
         self.step_size = step_size
         self.last_sequence_loaded = False
         self.augmentation = augmentation
+        self.flip = True
 
         # check if the dataset path exists
         if not os.path.exists(self.dataset_path):
@@ -42,8 +45,11 @@ class DatasetLoader:
                     # rotate the image
                     M = cv2.getRotationMatrix2D((frame.shape[1]//2, frame.shape[0]//2), np.radians(self.augmentation_angle), 1)
                     frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
-                    # add random color
+                    # add random shade
                     frame = np.clip(frame + self.augmentation_color, 0, 255)
+                    # flip the image
+                    if self.flip:
+                        frame = cv2.flip(frame, 1)
                     if DEBUG:
                         # convert frame to a supported depth
                         frame_to_show = frame.astype(np.uint8)
@@ -99,7 +105,7 @@ class DatasetLoader:
                 # add random color
                 frame = np.clip(frame + self.augmentation_color, 0, 255)
 
-                if self.flip == 1:
+                if self.flip:
                     frame = cv2.flip(frame, 1)
                 if DEBUG:
                     # convert frame to a supported depth
@@ -117,8 +123,7 @@ class DatasetLoader:
         self.augmentation_angle = random.uniform(-angle,angle)
         # random color
         color = 10
-        self.augmentation_color = np.random.randint(-color, color, size=3)
-        self.flip = np.random.randint(0, 1)
+        self.augmentation_color = np.random.randint(-color, color) * np.ones((1,1,3), dtype=np.uint8)
     
     def reset(self):
         '''
@@ -138,6 +143,9 @@ class DatasetLoader:
 
         self.fps_data = open(os.path.join(self.dataset_path, self.current_video, "fps.txt"), "r")
         self.current_fps = float((self.fps_data.readline()))
+
+        # set augmentation
+        self.flip = not self.flip
 
 
 
@@ -170,39 +178,3 @@ class DatasetLoader:
         return [self.current_N_sequence , self.N_sequences]
 
 
-
-if __name__ == "__main__":
-    dataset_path = "C:\\projects\\dataset_creator_test_output"
-    videos = ["video_0"]
-    loader = DatasetLoader(dataset_path, videos, N = 300, step_size=300, augmentation=True)
-    sequences_array = []
-    i = 0
-    done = False
-    while not done:
-        frames = loader.get_sequence()
-        print("Sequence", i, "Shape", frames.shape)
-        hr = loader.get_hr()
-        fps = loader.get_fps()
-        sequences_array.append(deepcopy(frames))
-        done = not loader.next_sequence()
-        i+=1
-        print("Progress", loader.progress(), "HR", hr, "FPS", fps)
-    print("N_sequences", loader.N_sequences)
-    print("Number of sequences", len(sequences_array))
-    print("End of the dataset")
-    # loader.reset()
-    # sequences_array = []
-    # i = 0
-    # done = False
-    # while not done:
-    #     frames = loader.get_sequence()
-    #     print("Sequence", i, "Shape", frames.shape)
-    #     hr = loader.get_hr()
-    #     fps = loader.get_fps()
-    #     sequences_array.append(deepcopy(frames))
-    #     done = not loader.next_sequence()
-    #     i+=1
-    #     print("Progress", loader.progress(), "HR", hr, "FPS", fps)
-    # print("N_sequences", loader.N_sequences)
-    # print("Number of sequences", len(sequences_array))
-    # print("End of the dataset")
