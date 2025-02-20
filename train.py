@@ -11,6 +11,7 @@ N =  160# length of the frame sequence
 delta = 5/60 # offset from the true frequency
 f_range = np.array([35, 240]) / 60 # possible frequencies boundaries
 sampling_f = 1/60 # sampling frequency in loss calculating
+hr_data = {"delta": delta, "f_range": f_range, "sampling_f": sampling_f}
 BATCH_SIZE = 1
 ARTIFICIAL_BATCH_SIZE = 1
 LEARING_RATE = 1e-4
@@ -23,7 +24,16 @@ NUM_EPOCHS_TO_DECRESING = 1
 DEBUG = False
 
 class ExtractorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False, N=100):
+    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1]):
+        if hr_data is not None:
+            self.hr_data = hr_data
+        else:
+            raise ValueError("hr_data is not provided")
+        self.lr_decay = lr_decay
+        self.decay_rate = decay_rate
+        self.decay_epochs = decay_epochs
+        self.cum_batch_size = cum_batch_size
+        self.sequence_length = N
         self.train_data_loader = train_data_loader
         self.valid_data_loader = valid_data_loader
         self.device = device
@@ -50,7 +60,7 @@ class ExtractorTrainer:
         self.model.load_state_dict(torch.load(model_path))
 
     def train(self):
-        print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "artificial batch size:", ARTIFICIAL_BATCH_SIZE,"decreasing learning rate:", DECRESING_LEARNING_RATE, "decreasing rate:", DEECREASING_RATE, "num epochs to decreasing:", NUM_EPOCHS_TO_DECRESING, "N:", N, "delta:", delta, "f_range:", f_range, "sampling_f:", sampling_f)
+        print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "cumulative batch size:", self.cum_batch_size,"lr decay:", self.lr_decay, "decay rate:", self.decay_rate, "decay epchs:", self.decay_rate, "N:", self.sequence_length, "delta:", self.hr_data["delta"], self.hr_data["f_range"], self.hr_data["sampling_f"])
         #  create another folder for model weights
         if not os.path.exists("model_weights"):
             os.makedirs("model_weights")
@@ -65,25 +75,28 @@ class ExtractorTrainer:
                 sequence, f_true, fs, n_of_sequences, epoch_done = self.create_batch()
                 if n_of_sequences != 0:
                     before_x = time.time()
-                    x = torch.tensor(sequence.reshape(n_of_sequences * N, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
+                    x = torch.tensor(sequence.reshape(n_of_sequences * self.sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
                     if self.debug:
                         print("shape of x", x.shape)
                     f_true = torch.tensor(f_true).float().to(self.device)
                     before_infer = time.time()
-                    output = self.model(x).reshape(n_of_sequences, N)
+                    output = self.model(x).reshape(n_of_sequences, self.sequence_length)
                     if self.debug:
                         print("output shape", output.shape)
                     before_loss = time.time()
+                    delta = self.hr_data["delta"]
+                    f_range = self.hr_data["f_range"]
+                    sampling_f = self.hr_data["sampling_f"]
                     loss = self.loss_fc(output, f_true, fs, delta, sampling_f, f_range)
                     self.log_progress(loss.item(), start_time)
                     self.writer.add_scalar("Loss/train", loss, self.train_log_counter)
                     self.train_log_counter += 1
                     before_backward = time.time()
                     loss.backward()
-                    if train_counter % ARTIFICIAL_BATCH_SIZE == 0:
+                    if train_counter % self.cum_batch_size == 0:
                         for param in self.model.parameters():
                             if param.grad is not None:
-                                param.grad.data /= ARTIFICIAL_BATCH_SIZE
+                                param.grad.data /= self.cum_batch_size
                         before_optimizer = time.time()
                         self.optimizer.step()
                         self.optimizer.zero_grad()
@@ -106,15 +119,15 @@ class ExtractorTrainer:
             # save weights of this epoch
             torch.save(self.model.state_dict(), "model_weights/model_epoch_" + str(i) + ".pth")
             # decrease learning rate
-            if DECRESING_LEARNING_RATE and i % NUM_EPOCHS_TO_DECRESING == 0:
-                self.learning_rate *= DEECREASING_RATE
+            if self.lr_decay and  i in self.decay_epochs:
+                self.learning_rate *= self.decay_rate
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] = self.learning_rate
         self.writer.flush()
         # self.plot_validation_loss()
 
     def create_batch(self):
-        sequence = np.zeros((self.batch_size, N, 192, 128, 3))
+        sequence = np.zeros((self.batch_size, self.sequence_length, 192, 128, 3))
         f_true = np.zeros((self.batch_size))
         fs = np.zeros((self.batch_size))
         n_of_sequences = 0
@@ -165,7 +178,7 @@ class ExtractorTrainer:
                 if self.debug:
                     print("shape of x", x.shape)
                 f_true = torch.tensor(f_true).float().to(self.device)
-                output = self.model(x).reshape(1, N)
+                output = self.model(x).reshape(1, self.sequence_length)
                 valid_loss += self.loss_fc(output, f_true, fs, delta, sampling_f, f_range)
                 progress = self.valid_data_loader.progress()
                 percentage_progress = progress[0] / progress[1] * 100
@@ -182,26 +195,93 @@ class ExtractorTrainer:
             torch.save(self.model.state_dict(), "model.pth")
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Train the model")
-    parser.add_argument("N", type=int, help="Length of the frame sequence", default=N)
-    parser.add_argument("batch_size", type=int, help="Batch size", default=BATCH_SIZE)
-    parser.add_argument("learning_rate", type=float, help="Learning rate", default = LEARING_RATE)
-    parser.add_argument("num_epochs", type=int, help="Number of epochs", default=NUM_EPOCHS)
-    parser.add_argument("train_path", type=str, help="Path to the train dataset", default="dataset/train")
-    parser.add_argument("valid_path", type=str, help="Path to the validation dataset", default="dataset/valid")
-    parser.add_argument("--device", type=str, help="Device to train on", default="cuda:0")
-    args = parser.parse_args()
-    train_path = args.train_path
-    valid_path = args.valid_path
-    train_videos_list = os.listdir(train_path)
-    valid_videos_list = os.listdir(valid_path)
-    train_data_loader = DatasetLoader(train_path, train_videos_list, N=args.N, step_size=args.N, augmentation=True)
-    valid_data_loader = DatasetLoader(valid_path, valid_videos_list, N=args.N, step_size=args.N)
+    import yaml
+    import csv
+    config_data = yaml.safe_load(open("config_extractor.yaml"))
+    data = config_data["data"]
+    optimizer = config_data["optimizer"]
+    hr_data = config_data["hr_data"]
+    train = config_data["train"]
+    valid = config_data["valid"]
+    # load data
+    benchmark_path = data["benchmark"]
+    dataset_path = data["dataset_dir"]
+    folders_path = os.path.join(dataset_path, "data.csv")
+    folders = []
+    with open(folders_path, 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            folders.append(row)
+    benchmark = yaml.safe_load(open(benchmark_path))
+    train_folders = benchmark["trn"]
+    valid_folders = benchmark["val"]
+    train_videos_list = np.array([])
+    valid_videos_list = np.array([])
+
+    for idx in train_folders:
+        train_videos_list = np.append(train_videos_list, np.array(folders[idx]))
+    
+    for idx in valid_folders:
+        valid_videos_list = np.append(valid_videos_list, np.array(folders[idx]))
+
+    # create training data loader
+    train_sequence_length = train["sequence_length"]
+    train_shift = train["shift"]
+    train_augment = train["augment"]
+    train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=train_sequence_length, step_size=train_shift, augmentation=train_augment)
+    
+    # create validation data loader
+    valid_sequence_length = valid["sequence_length"]
+    valid_shift = valid["shift"]
+    valid_augment = valid["augment"]
+    valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=valid_sequence_length, step_size=valid_shift, augmentation=valid_augment)
+
+
+
+    # load HR data setting for loss function
+    delta = hr_data["delta"]/60
+    f_range = np.array(hr_data["frequency_range"])/60
+    sampling_f = hr_data["sampling_frequency"]/60
+    hr_data = {"delta": delta, "f_range": f_range, "sampling_f": sampling_f}
+
+    sequence_length = train["sequence_length"]
+
+    # load data for training
+    lr = float(optimizer["lr"])
+    batch_size = optimizer["batch_size"]
+    cum_batch_size = optimizer["cumulative_batch_size"]
+    num_epochs = optimizer["num_epochs"]
+    decrease_lr = optimizer["decrease_lr"]
+    lr_decay = optimizer["lr_decay"]
+    lr_decay_epochs = optimizer["lr_decay_epochs"]
+    device = input("Device to train on: ")
     if not torch.cuda.is_available():
         device = torch.device("cpu")
     else:
-        device = torch.device(args.device)
-
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=args.learning_rate, debug=DEBUG, batch_size=args.batch_size, num_epochs=args.num_epochs)
+        device = torch.device("cuda:" + device)
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, learning_rate=lr, batch_size=batch_size, num_epochs=num_epochs, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs)
     trainer.train()
+
+
+    # import argparse
+    # parser = argparse.ArgumentParser(description="Train the model")
+    # parser.add_argument("N", type=int, help="Length of the frame sequence", default=N)
+    # parser.add_argument("batch_size", type=int, help="Batch size", default=BATCH_SIZE)
+    # parser.add_argument("learning_rate", type=float, help="Learning rate", default = LEARING_RATE)
+    # parser.add_argument("num_epochs", type=int, help="Number of epochs", default=NUM_EPOCHS)
+    # parser.add_argument("train_path", type=str, help="Path to the train dataset", default="dataset/train")
+    # parser.add_argument("valid_path", type=str, help="Path to the validation dataset", default="dataset/valid")
+    # parser.add_argument("--device", type=str, help="Device to train on", default="cuda:0")
+    # train_path = args.train_path
+    # valid_path = args.valid_path
+    # train_videos_list = os.listdir(train_path)
+    # valid_videos_list = os.listdir(valid_path)
+    # train_data_loader = DatasetLoader(train_path, train_videos_list, N=args.N, step_size=args.N, augmentation=True)
+    # valid_data_loader = DatasetLoader(valid_path, valid_videos_list, N=args.N, step_size=args.N)
+    # if not torch.cuda.is_available():
+    #     device = torch.device("cpu")
+    # else:
+    #     device = torch.device(args.device)
+
+    # trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device,learning_rate=args.learning_rate, debug=DEBUG, batch_size=args.batch_size, num_epochs=args.num_epochs)
+    # trainer.train()
