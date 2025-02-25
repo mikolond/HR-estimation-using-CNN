@@ -1,13 +1,13 @@
-from model import Extractor
+from model_extractor import Extractor
 from loss import ExtractorLoss
 from dataset_loader import DatasetLoader
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-N = 300 # length of the frame sequence
+N = 150 # length of the frame sequence
 delta = 5/60 # offset from the true frequency
-f_range = np.array([45, 240]) / 60 # all possible frequencies
+f_range = np.array([40, 240]) / 60 # all possible frequencies
 sampling_f = 1/60 # sampling frequency in loss calculating
 
 
@@ -33,6 +33,7 @@ def get_max_freq(output,fps, hr):
     return max_freq
 
 def evaluate_dataset(dataset_loader, model, device):
+    dataset_loader.reset()
     L2_list = []
     SNR_list = []
     dataset_done = False
