@@ -8,10 +8,10 @@ optimizer:
     batch_size: 1
     cumulative_batch_size: 1
     lr: 1e-4
-    num_epochs: 10
-    decrease_lr: True
-    lr_decay: 0.1
-    lr_decay_epochs: [5, 8]
+    num_epochs: 30
+    decrease_lr: False
+    lr_decay: 0.5
+    lr_decay_epochs: [5, 15,15]
 
 hr_data:
     frequency_range: [35, 240]
@@ -19,11 +19,11 @@ hr_data:
     sampling_frequency: 1
 
 train:
-    sequence_length: 160
-    shift: 160
+    sequence_length: 150
+    shift: 150
     augment: True
 
 valid:
-    sequence_length: 160
-    shift: 160
+    sequence_length: 150
+    shift: 150
     augment: False

@@ -89,14 +89,21 @@ def evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, devic
     model.load_state_dict(torch.load(weights_path))
     trn_L2_list, trn_SNR_list = evaluate_dataset(trn_dataset_loader, model, device, sequence_length, batch_size, delta, f_range, sampling_f)
     val_L2_list, val_SNR_list = evaluate_dataset(val_dataset_loader, model, device, sequence_length, batch_size, delta, f_range, sampling_f)
-    return trn_L2_list, trn_SNR_list, val_L2_list, val_SNR_list
+    trn_L2 = np.mean(trn_L2_list)
+    trn_SNR = np.mean(trn_SNR_list)
+    val_L2 = np.mean(val_L2_list)
+    val_SNR = np.mean(val_SNR_list)
+    return trn_L2, trn_SNR, val_L2, val_SNR
 
 def evaluate_everything(trn_dataset_loader, val_dataset_loader, weights_folder_path, device, sequence_length = 150, batch_size=1, num_of_epochs = 10, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
-    epochs_results = []
+    epochs_results = {"trn_L2": [], "trn_SNR": [], "val_L2": [], "val_SNR": []}
     for i in range(num_of_epochs + 1):
         weights_path = weights_folder_path + "/model_epoch_" + str(i-1) + ".pth"
-        trn_L2_list, trn_SNR_list, val_L2_list, val_SNR_list = evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, device, sequence_length, batch_size, delta, f_range, sampling_f)
-        epochs_results.append((trn_L2_list, trn_SNR_list, val_L2_list, val_SNR_list))
+        trn_L2, trn_SNR, val_L2, val_SNR = evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, device, sequence_length, batch_size, delta, f_range, sampling_f)
+        epochs_results["trn_L2"].append(trn_L2)
+        epochs_results["trn_SNR"].append(trn_SNR)
+        epochs_results["val_L2"].append(val_L2)
+        epochs_results["val_SNR"].append(val_SNR)
     return epochs_results
 
 def plot_results(epochs_results):
@@ -104,21 +111,31 @@ def plot_results(epochs_results):
     trn_SNR_list = []
     val_L2_list = []
     val_SNR_list = []
-    for i in range(len(epochs_results)):
-        trn_L2_list.append(np.mean(epochs_results[i][0]))
-        trn_SNR_list.append(np.mean(epochs_results[i][1]))
-        val_L2_list.append(np.mean(epochs_results[i][2]))
-        val_SNR_list.append(np.mean(epochs_results[i][3]))
+    for i in range(len(epochs_results["trn_L2"])):
+        trn_L2_list.append(epochs_results["trn_L2"][i])
+        trn_SNR_list.append(epochs_results["trn_SNR"][i])
+        val_L2_list.append(epochs_results["val_L2"][i])
+        val_SNR_list.append(epochs_results["val_SNR"][i])
+    # 1 figure for L2
     plt.figure()
-    plt.plot(trn_L2_list, label="Train L2")
+    plt.plot(trn_L2_list, label="Training L2")
     plt.plot(val_L2_list, label="Validation L2")
-    plt.plot(trn_SNR_list, label="Train SNR")
-    plt.plot(val_SNR_list, label="Validation SNR")
-    plt.legend()
     plt.xlabel("Epoch")
-    plt.savefig("results.png")
+    plt.ylabel("L2")
+    plt.legend()
+    plt.title("L2")
     plt.show()
-
+    plt.savefig("L2.png")
+    # 1 figure for SNR
+    plt.figure()
+    plt.plot(trn_SNR_list, label="Training SNR")
+    plt.plot(val_SNR_list, label="Validation SNR")
+    plt.xlabel("Epoch")
+    plt.ylabel("SNR")
+    plt.legend()
+    plt.title("SNR")
+    plt.show()
+    plt.savefig("SNR.png")
 
 
 if __name__ == "__main__":
