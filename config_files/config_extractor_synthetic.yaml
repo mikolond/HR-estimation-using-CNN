@@ -7,11 +7,11 @@ data:
 optimizer:
     batch_size: 1
     cumulative_batch_size: 1
-    lr: 1e-3
-    num_epochs: 10
+    lr: 5e-4
+    num_epochs: 30
     decrease_lr: True
-    lr_decay: 0.1
-    lr_decay_epochs: [5, 8]
+    lr_decay: 0.25
+    lr_decay_epochs: [5, 10, 15, 25]
 
 hr_data:
     frequency_range: [40, 240]
