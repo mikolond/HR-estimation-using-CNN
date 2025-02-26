@@ -191,7 +191,7 @@ class ExtractorTrainer:
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_extractor_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_extractor.yaml"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]
