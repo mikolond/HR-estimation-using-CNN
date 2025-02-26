@@ -4,6 +4,7 @@ from dataset_loader import DatasetLoader
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 N = 150 # length of the frame sequence
 delta = 5/60 # offset from the true frequency
@@ -24,7 +25,7 @@ def get_max_freq(output,fps, hr):
     fft_values[0] = 0
     
 
-    valid_indices = (freqs > 50) & (freqs <= 240)
+    valid_indices = (freqs > 40) & (freqs <= 240)
     freqs = freqs[valid_indices]
     fft_values = fft_values[valid_indices]
     max_freq_index = np.argmax(fft_values)
@@ -32,61 +33,152 @@ def get_max_freq(output,fps, hr):
     
     return max_freq
 
-def evaluate_dataset(dataset_loader, model, device):
+def evaluate_dataset(dataset_loader, model, device, sequence_length = 150, batch_size=1, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
     dataset_loader.reset()
+    augment_state = dataset_loader.augmentation
+    dataset_loader.augmentation = False
     L2_list = []
     SNR_list = []
     dataset_done = False
     model.eval()
     print("Evaluating dataset")
-    while not dataset_done:
-        frames = dataset_loader.get_sequence()
-        hr = dataset_loader.get_hr()
-        fps = dataset_loader.get_fps()
-        x = torch.tensor(frames.transpose(0, 3, 1, 2), dtype=torch.float32).to(device)
-        with torch.no_grad():
-            output = model(x).reshape(N)
-        output_numpy = output.detach().cpu().numpy()
-        # evaluate L2 norm metric
-        max_freq = get_max_freq(output_numpy, fps, hr)
-        L2 = np.abs(max_freq - hr)
-        L2_list.append(L2)
-        # evaluate snr metric (using loss function)
-        f_true = torch.tensor([hr / 60], dtype=torch.float32).to(device)
-        fs = torch.tensor([fps], dtype=torch.float32).to(device)
-        loss = ExtractorLoss().forward(output.reshape(1,N), f_true, fs, delta, sampling_f, f_range)
-        SNR_list.append(-loss.item())
-        dataset_done = not dataset_loader.next_sequence()
-        progress = dataset_loader.progress()
-        print("progress", int(progress[0]/progress[1]*100),"%", end="\r")
+    with torch.no_grad():
+        while not dataset_done:
+            sequence, f_true_list, fs_list, n_of_sequences, dataset_done = create_batch(dataset_loader, sequence_length, batch_size)
+            if n_of_sequences == 0:
+                break
+            x = torch.tensor(sequence.reshape(n_of_sequences * sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(device)
+            output = model(x).reshape(n_of_sequences, sequence_length)
+            loss = ExtractorLoss().forward(output, torch.tensor(f_true_list).to(device), torch.tensor(fs_list).to(device), delta, sampling_f, f_range)
+            SNR_list.append(-loss.item())
+            output_numpy_batch = output.detach().cpu().numpy().reshape(n_of_sequences * sequence_length)
+            for i in range(n_of_sequences):
+                output_numpy = output_numpy_batch[i*sequence_length:sequence_length*(i+1)]
+                f_true = f_true_list[i]
+                fs = fs_list[i]
+
+
+                # evaluate L2 norm metric
+                max_freq = get_max_freq(output_numpy, fs, f_true)
+                L2 = np.abs(max_freq - f_true)
+                L2_list.append(L2)
+                progress = dataset_loader.progress()
+                print("progress", int(progress[0]/progress[1]*100),"%", end="\r")
+    dataset_loader.reset()
+    dataset_loader.augmentation = augment_state
 
     return L2_list, SNR_list
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Evaluate the model")
-    parser.add_argument("model_path", type=str, help="Path to the model")
-    parser.add_argument("dataset_folder_path", type=str, help="Path to the dataset")
-    parser.add_argument("--device", type=str, help="Device to train on", default="cuda:0")
-    parser.add_argument("--visualize", action="store_true", help="Visualize the results", default=False)
+def create_batch(dataset_loader, sequence_length, batch_size):
+    sequence = np.zeros((batch_size, sequence_length, 192, 128, 3))
+    f_true = np.zeros((batch_size))
+    fs = np.zeros((batch_size))
+    n_of_sequences = 0
+    epoch_done = False
+    for j in range(batch_size):
+        cur_seq = dataset_loader.get_sequence()
+        sequence[j] = cur_seq
+        f_true[j] = dataset_loader.get_hr() / 60
+        fs[j] = dataset_loader.get_fps()
+        epoch_done = not dataset_loader.next_sequence()
+        n_of_sequences = j + 1
+    return sequence[:n_of_sequences], f_true[:n_of_sequences], fs[:n_of_sequences], n_of_sequences, epoch_done
 
-    args = parser.parse_args()
-    model_path = args.model_path
-    dataset_folder_path = args.dataset_folder_path
-    if not torch.cuda.is_available():
-        device = torch.device("cpu")
-    else:
-        device = torch.device(args.device)
+def evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, device, sequence_length = 150, batch_size=1, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
     model = Extractor().to(device)
-    model.load_state_dict(torch.load(model_path))
-    dataset_loader = DatasetLoader(dataset_folder_path, None, N = N, step_size=N)
-    L2_list, SNR_list = evaluate_dataset(dataset_loader, model, device)
-    print("Mean average error: ", np.mean(L2_list))
-    print("Root mean square error:", np.sqrt(np.mean(np.array(L2_list)**2)))
-    print("Mean SNR: ", np.mean(SNR_list))
-    if args.visualize:
-        plt.figure()
-        plt.plot(L2_list)
-        plt.title("L2 norm")
-        plt.show()
+    model.load_state_dict(torch.load(weights_path))
+    trn_L2_list, trn_SNR_list = evaluate_dataset(trn_dataset_loader, model, device, sequence_length, batch_size, delta, f_range, sampling_f)
+    val_L2_list, val_SNR_list = evaluate_dataset(val_dataset_loader, model, device, sequence_length, batch_size, delta, f_range, sampling_f)
+    return trn_L2_list, trn_SNR_list, val_L2_list, val_SNR_list
 
+def evaluate_everything(trn_dataset_loader, val_dataset_loader, weights_folder_path, device, sequence_length = 150, batch_size=1, num_of_epochs = 10, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
+    epochs_results = []
+    for i in range(num_of_epochs + 1):
+        weights_path = weights_folder_path + "/model_epoch_" + str(i-1) + ".pth"
+        trn_L2_list, trn_SNR_list, val_L2_list, val_SNR_list = evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, device, sequence_length, batch_size, delta, f_range, sampling_f)
+        epochs_results.append((trn_L2_list, trn_SNR_list, val_L2_list, val_SNR_list))
+    return epochs_results
+
+def plot_results(epochs_results):
+    trn_L2_list = []
+    trn_SNR_list = []
+    val_L2_list = []
+    val_SNR_list = []
+    for i in range(len(epochs_results)):
+        trn_L2_list.append(np.mean(epochs_results[i][0]))
+        trn_SNR_list.append(np.mean(epochs_results[i][1]))
+        val_L2_list.append(np.mean(epochs_results[i][2]))
+        val_SNR_list.append(np.mean(epochs_results[i][3]))
+    plt.figure()
+    plt.plot(trn_L2_list, label="Train L2")
+    plt.plot(val_L2_list, label="Validation L2")
+    plt.plot(trn_SNR_list, label="Train SNR")
+    plt.plot(val_SNR_list, label="Validation SNR")
+    plt.legend()
+    plt.xlabel("Epoch")
+    plt.savefig("results.png")
+    plt.show()
+
+
+
+if __name__ == "__main__":
+    batch_size = 1
+    import yaml
+    import csv
+    config_data = yaml.safe_load(open("config_files/config_extractor_synthetic.yaml"))
+    data = config_data["data"]
+    optimizer = config_data["optimizer"]
+    hr_data = config_data["hr_data"]
+    train = config_data["train"]
+    valid = config_data["valid"]
+    # load data
+    weights_path = data["weights_dir"]
+    benchmark_path = data["benchmark"]
+    dataset_path = data["dataset_dir"]
+    folders_path = os.path.join(dataset_path, "data.csv")
+    folders = []
+    with open(folders_path, 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            folders.append(row)
+    benchmark = yaml.safe_load(open(benchmark_path))
+    train_folders = benchmark["trn"]
+    valid_folders = benchmark["val"]
+    train_videos_list = np.array([])
+    valid_videos_list = np.array([])
+
+    for idx in train_folders:
+        train_videos_list = np.append(train_videos_list, np.array(folders[idx]))
+    
+    for idx in valid_folders:
+        valid_videos_list = np.append(valid_videos_list, np.array(folders[idx]))
+
+    # create training data loader
+    train_sequence_length = train["sequence_length"]
+    train_shift = train["shift"]
+    train_augment = train["augment"]
+    train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=train_sequence_length, step_size=train_shift, augmentation=train_augment)
+    
+    # create validation data loader
+    valid_sequence_length = valid["sequence_length"]
+    valid_shift = valid["shift"]
+    valid_augment = valid["augment"]
+    valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=valid_sequence_length, step_size=valid_shift, augmentation=valid_augment)
+
+    # load HR data setting for loss function
+    delta = hr_data["delta"]/60
+    f_range = np.array(hr_data["frequency_range"])/60
+    sampling_f = hr_data["sampling_frequency"]/60
+    hr_data = {"delta": delta, "f_range": f_range, "sampling_f": sampling_f}
+
+    # device = input("Device to evaluate on: ")
+    # if not torch.cuda.is_available():
+    #     device = torch.device("cpu")
+    # else:
+    #     device = torch.device("cuda:" + device)
+    device = torch.device("cuda:0")
+
+    epochs_results = evaluate_everything(train_data_loader, valid_data_loader, weights_path, device, train_sequence_length, batch_size,10, delta, f_range, sampling_f)
+    print("Results:")
+    print(epochs_results)
+    plot_results(epochs_results)
