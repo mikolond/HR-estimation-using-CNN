@@ -6,7 +6,6 @@ import numpy as np
 import time
 import os
 from torch.utils.tensorboard import SummaryWriter
-from evaluate import evaluate_dataset
 import csv
 
 
