@@ -13,7 +13,7 @@ import csv
 DEBUG = False
 
 class ExtractorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1], result_path="results/output"):
+    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1], weights_path = None):
         if hr_data is not None:
             self.hr_data = hr_data
         else:
@@ -32,7 +32,7 @@ class ExtractorTrainer:
         self.debug = debug
         self.model = Extractor().to(self.device)
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, foreach=False)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.0001)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.7)
         self.validation_loss_log = []
         self.current_epoch = 0
@@ -44,16 +44,16 @@ class ExtractorTrainer:
         self.writer = SummaryWriter(os.path.join('net-'+str(learning_rate)[0:10]+'/'))
         self.train_log_counter = 0
 
-        self.csv_path = result_path + "/training_log.csv"
-        self.csv_log = {"tr_snr":0, "tr_l2":0, "val_snr":0, "val_l2":0}
-        self.init_csv()
+        self.weights_path = weights_path
+
 
 
     def load_model(self, model_path):
         self.model.load_state_dict(torch.load(model_path))
 
     def train(self):
-        self.evaluate_everything(-1)
+        path_to_save = os.path.join(self.weights_path, "model_epoch_-1.pth")
+        torch.save(self.model.state_dict(), path_to_save)
         print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "cumulative batch size:", self.cum_batch_size,"lr decay:", self.lr_decay, "decay rate:", self.decay_rate, "decay epchs:", self.decay_rate, "N:", self.sequence_length, "delta:", self.hr_data["delta"], self.hr_data["f_range"], self.hr_data["sampling_f"])
         #  create another folder for model weights
         if not os.path.exists("model_weights"):
@@ -104,15 +104,15 @@ class ExtractorTrainer:
                         print("Time taken for backward pass:", before_optimizer - before_backward)
                         print("Time taken for optimizer step:", time.time() - before_optimizer)
                 train_counter += 1
-            # self.validate()
-            self.evaluate_everything(i)
+            self.validate()
             self.train_data_loader.reset()
             self.valid_data_loader.reset()
             self.last_epoch_time = self.current_epoch_time
             print("\nepoch", i, "done")
             print("validation loss", self.validation_loss_log)
             # save weights of this epoch
-            torch.save(self.model.state_dict(), "model_weights/model_epoch_" + str(i) + ".pth")
+            path_to_save = os.path.join(self.weights_path, "model_epoch_" + str(i) + ".pth")
+            torch.save(self.model.state_dict(), path_to_save)
             # decrease learning rate
             if self.lr_decay and  i in self.decay_epochs:
                 self.learning_rate *= self.decay_rate
@@ -157,17 +157,6 @@ class ExtractorTrainer:
             self.ema_loss = alpha * self.ema_loss + (1 - alpha) * loss
         print("EMA loss:{:.4f}".format(self.ema_loss), ",epoch progress:", int(percentage_progress), "% ,eta:", estimated_time_hours, "h and", estimated_time_minutes % 60, "m", end="\r")
 
-    def init_csv(self):
-        with open(self.csv_path, "w") as file:
-            writer = csv.writer(file)
-            writer.writerow(["epoch", "train_snr_loss", "train_l2_loss", "valid_snr_loss", "valid_l2_loss"])
-
-    def log_csv(self, epoch):
-        with open("training_log.csv", "a") as file:
-            writer = csv.writer(file)
-            writer.writerow([epoch, self.csv_log["tr_snr"], self.csv_log["tr_l2"], self.csv_log["val_snr"], self.csv_log
-            ["val_l2"]])
-
     def validate(self):
         print("\nvalidation")
         self.model.eval()
@@ -195,18 +184,6 @@ class ExtractorTrainer:
             self.writer.add_scalar("Loss/valid", valid_loss, self.current_epoch)
             self.validation_loss_log.append(valid_loss.detach().cpu().numpy().item())
 
-    def evaluate_everything(self, epoch):
-        self.model.eval()
-        with torch.no_grad():
-            train_L2, train_SNR = evaluate_dataset(self.train_data_loader, self.model, self.device)
-            valid_L2, valid_SNR = evaluate_dataset(self.valid_data_loader, self.model, self.device)
-            self.csv_log["tr_snr"] = np.mean(train_SNR)
-            self.csv_log["tr_l2"] = np.mean(train_L2)
-            self.csv_log["val_snr"] = np.mean(valid_SNR)
-            self.csv_log["val_l2"] = np.mean(valid_L2)
-            self.log_csv(epoch)
-        self.model.train()
-
     def save_model(self):
         user = input("Save model? y/n")
         if user == "y":
@@ -222,7 +199,7 @@ if __name__ == "__main__":
     train = config_data["train"]
     valid = config_data["valid"]
     # load data
-    result_path = data["output_dir"]
+    weights_path = data["weights_dir"]
     benchmark_path = data["benchmark"]
     dataset_path = data["dataset_dir"]
     folders_path = os.path.join(dataset_path, "data.csv")
@@ -278,6 +255,6 @@ if __name__ == "__main__":
         device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + device)
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, learning_rate=lr, batch_size=batch_size, num_epochs=num_epochs, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, result_path=result_path)
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, learning_rate=lr, batch_size=batch_size, num_epochs=num_epochs, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = weights_path)
     trainer.train()
 
