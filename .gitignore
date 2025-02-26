@@ -2,3 +2,4 @@ test_videos/*
 .vscode/
 datasets/*
 .trash/
+output/*
