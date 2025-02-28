@@ -112,10 +112,14 @@ def evaluate_everything(trn_dataset_loader, val_dataset_loader, weights_folder_p
     return epochs_results
 
 
-def write_csv(writer, epoch, trn_L2, trn_SNR, val_L2, val_SNR):
+def write_csv(results_path, epoch, trn_L2, trn_SNR, val_L2, val_SNR):
     csv_path = os.path.join(results_path, "evaluation_results.csv")
-    with open(csv_path, 'w', newline='') as file:
+    file_exists = os.path.isfile(csv_path)
+    
+    with open(csv_path, 'a', newline='') as file:
         writer = csv.writer(file)
+        if not file_exists:
+            writer.writerow(["Epoch", "trn_L2", "trn_SNR", "val_L2", "val_SNR"])
         writer.writerow([epoch, trn_L2, trn_SNR, val_L2, val_SNR])
 
 
