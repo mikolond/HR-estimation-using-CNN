@@ -5,11 +5,15 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import csv
+import datetime
 
 N = 150 # length of the frame sequence
 delta = 5/60 # offset from the true frequency
 f_range = np.array([40, 240]) / 60 # all possible frequencies
 sampling_f = 1/60 # sampling frequency in loss calculating
+
+
 
 
 def get_max_freq(output,fps, hr):
@@ -86,7 +90,7 @@ def create_batch(dataset_loader, sequence_length, batch_size):
 
 def evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, device, sequence_length = 150, batch_size=1, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
     model = Extractor().to(device)
-    model.load_state_dict(torch.load(weights_path))
+    model.load_state_dict(torch.load(weights_path, map_location=device))
     trn_L2_list, trn_SNR_list = evaluate_dataset(trn_dataset_loader, model, device, sequence_length, batch_size, delta, f_range, sampling_f)
     val_L2_list, val_SNR_list = evaluate_dataset(val_dataset_loader, model, device, sequence_length, batch_size, delta, f_range, sampling_f)
     trn_L2 = np.mean(trn_L2_list)
@@ -95,18 +99,36 @@ def evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, devic
     val_SNR = np.mean(val_SNR_list)
     return trn_L2, trn_SNR, val_L2, val_SNR
 
-def evaluate_everything(trn_dataset_loader, val_dataset_loader, weights_folder_path, device, sequence_length = 150, batch_size=1, num_of_epochs = 10, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
+def evaluate_everything(trn_dataset_loader, val_dataset_loader, weights_folder_path, results_path, device, sequence_length = 150, batch_size=1, num_of_epochs = 10, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
     epochs_results = {"trn_L2": [], "trn_SNR": [], "val_L2": [], "val_SNR": []}
     for i in range(num_of_epochs + 1):
-        weights_path = weights_folder_path + "/model_epoch_" + str(i-1) + ".pth"
+        weights_path = os.path.join(weights_folder_path,"model_epoch_" + str(i-1) + ".pth")
         trn_L2, trn_SNR, val_L2, val_SNR = evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, device, sequence_length, batch_size, delta, f_range, sampling_f)
         epochs_results["trn_L2"].append(trn_L2)
         epochs_results["trn_SNR"].append(trn_SNR)
         epochs_results["val_L2"].append(val_L2)
         epochs_results["val_SNR"].append(val_SNR)
+        write_csv(results_path, i, trn_L2, trn_SNR, val_L2, val_SNR)
     return epochs_results
 
-def plot_results(epochs_results):
+
+def write_csv(writer, epoch, trn_L2, trn_SNR, val_L2, val_SNR):
+    csv_path = os.path.join(results_path, "evaluation_results.csv")
+    with open(csv_path, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([epoch, trn_L2, trn_SNR, val_L2, val_SNR])
+
+
+def save_results(epoch_results, results_path):
+    csv_path = os.path.join(results_path, "evaluation_results.csv")
+    with open(csv_path, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Epoch", "trn_L2", "trn_SNR", "val_L2", "val_SNR"])
+        for i in range(len(epoch_results["trn_L2"])):
+            writer.writerow([i, epoch_results["trn_L2"][i], epoch_results["trn_SNR"][i], epoch_results["val_L2"][i], epoch_results["val_SNR"][i]])
+    print("Results saved to", csv_path)
+
+def plot_results(epochs_results, results_path):
     trn_L2_list = []
     trn_SNR_list = []
     val_L2_list = []
@@ -125,7 +147,8 @@ def plot_results(epochs_results):
     plt.legend()
     plt.title("L2")
     plt.show()
-    plt.savefig("L2.png")
+    L2_save_path = os.path.join(results_path, "L2.png")
+    plt.savefig(L2_save_path)
     # 1 figure for SNR
     plt.figure()
     plt.plot(trn_SNR_list, label="Training SNR")
@@ -135,10 +158,12 @@ def plot_results(epochs_results):
     plt.legend()
     plt.title("SNR")
     plt.show()
-    plt.savefig("SNR.png")
+    SNR_save_path = os.path.join(results_path, "SNR.png")
+    plt.savefig(SNR_save_path)
 
 
 if __name__ == "__main__":
+    num_of_epochs = 30
     batch_size = 1
     import yaml
     import csv
@@ -195,7 +220,15 @@ if __name__ == "__main__":
     #     device = torch.device("cuda:" + device)
     device = torch.device("cuda:0")
 
-    epochs_results = evaluate_everything(train_data_loader, valid_data_loader, weights_path, device, train_sequence_length, batch_size,10, delta, f_range, sampling_f)
+    output_path = data["output_dir"]
+    # crate_folder with date and time in name in the output path
+    date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    results_path = os.path.join(output_path, date_time)
+    os.makedirs(results_path, exist_ok=True)
+
+
+    epochs_results = evaluate_everything(train_data_loader, valid_data_loader, weights_path, results_path, device, train_sequence_length, batch_size,num_of_epochs, delta, f_range, sampling_f)
     print("Results:")
     print(epochs_results)
-    plot_results(epochs_results)
+    # save_results(epochs_results, results_path)
+    plot_results(epochs_results, results_path)

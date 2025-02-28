@@ -65,8 +65,6 @@ class DatasetLoader:
                 self.current_hr_data = np.roll(self.current_hr_data, -1)
                 # load new hr data
                 self.current_hr_data[-1] = int(self.hr_data.readline())
-
-            self.current_hr = np.mean(self.current_hr_data)
             return True
         else:
             # load the next video
@@ -93,7 +91,6 @@ class DatasetLoader:
         # load the next hr data
         self.hr_data = open(os.path.join(self.dataset_path, self.current_video, "hr_data.txt"), "r")
         self.current_hr_data = np.array([int(self.hr_data.readline()) for i in range(self.N)])
-        self.current_hr = np.mean(self.current_hr_data)
 
         # load first N frames
         for i in range(self.N):
@@ -161,7 +158,14 @@ class DatasetLoader:
         Return the current hr
         return: float
         '''
-        return float(self.current_hr)
+        return float(np.mean(self.current_hr_data))
+    
+    def get_hr_list(self):
+        '''
+        Return the current hr list
+        return: list of int
+        '''
+        return self.current_hr_data
     
     def get_fps(self):
         '''

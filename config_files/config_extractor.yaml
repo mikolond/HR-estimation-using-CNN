@@ -5,7 +5,7 @@ data:
     weights_dir: "output/weights/"
 
 optimizer:
-    batch_size: 2
+    batch_size: 1
     cumulative_batch_size: 1
     lr: 1e-4
     num_epochs: 30

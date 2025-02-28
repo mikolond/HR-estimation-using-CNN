@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 import csv
 
 
-DEBUG = False
+DEBUG = True
 
 class ExtractorTrainer:
     def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1], weights_path = None):
@@ -97,6 +97,7 @@ class ExtractorTrainer:
   
                     # print all times
                     if self.debug:
+                        print("Time for loading batch:", before_x - epoch_start)
                         print("Time taken for x:", before_infer - before_x)
                         print("Time taken for inference:", before_loss - before_infer)
                         print("Time taken for loss calculation:", before_backward - before_loss)
@@ -254,6 +255,6 @@ if __name__ == "__main__":
         device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + device)
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, learning_rate=lr, batch_size=batch_size, num_epochs=num_epochs, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = weights_path)
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, learning_rate=lr, batch_size=batch_size, num_epochs=num_epochs, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = weights_path, debug=DEBUG)
     trainer.train()
 
