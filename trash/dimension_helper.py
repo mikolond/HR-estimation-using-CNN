@@ -8,12 +8,12 @@ if __name__ == "__main__":
     dim2 = 0
     for i in range(11):
         # conv
-        dim1 = get_dims(dim1, 11, 1, 0)
+        dim1 = get_dims(dim1, 10, 1, 0)
         dim2 = get_dims(dim2, 0, 1, 0)
         print(f"Dim1: {dim1}, iteration: {i}")
-    for i in range(4):
+    for i in range(5):
         # max pool
-        dim1 = get_dims(dim1, 11, 1, 0)
+        dim1 = get_dims(dim1, 10, 1, 0)
         dim2 = get_dims(dim2, 0, 1, 0)
         print(f"Dim1: {dim1}, iteration: {i}")
 
