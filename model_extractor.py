@@ -74,11 +74,17 @@ class Extractor(nn.Module):
     def forward(self, x):
         # normalization to [-1, 1]
         x = x / 255 * 2 - 1
+        print("x0:", x.shape)
         x = self.conv1(x)
+        print("x1:", x.shape)
         x = self.conv2(x)
+        print("x2:", x.shape)
         x = self.conv3(x)
+        print("x3:", x.shape)
         x = self.conv4(x)
+        print("x4:", x.shape)
         x = self.conv5(x)
+        print("x5:", x.shape)
         return x
 
     def init_weights(self):

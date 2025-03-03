@@ -1,5 +1,6 @@
 import torch
-from model_extractor import Extractor
+# from model_extractor import Extractor
+from my_extractor import Extractor
 from loss import ExtractorLoss
 from dataset_loader import DatasetLoader
 import numpy as np
@@ -9,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 import csv
 
 
-DEBUG = True
+DEBUG = False
 
 class ExtractorTrainer:
     def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1], weights_path = None):
@@ -31,7 +32,7 @@ class ExtractorTrainer:
         self.debug = debug
         self.model = Extractor().to(self.device)
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.05)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.7)
         self.validation_loss_log = []
         self.current_epoch = 0
@@ -174,6 +175,9 @@ class ExtractorTrainer:
                     print("shape of x", x.shape)
                 f_true = torch.tensor(f_true).float().to(self.device)
                 output = self.model(x).reshape(1, self.sequence_length)
+                delta = self.hr_data["delta"]
+                f_range = self.hr_data["f_range"]
+                sampling_f = self.hr_data["sampling_f"]
                 valid_loss += self.loss_fc(output, f_true, fs, delta, sampling_f, f_range)
                 progress = self.valid_data_loader.progress()
                 percentage_progress = progress[0] / progress[1] * 100
@@ -191,8 +195,9 @@ class ExtractorTrainer:
 
 if __name__ == "__main__":
     import yaml
+
     import csv
-    config_data = yaml.safe_load(open("config_files/config_extractor.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_extractor_synthetic.yaml"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]
