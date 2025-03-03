@@ -1,4 +1,5 @@
-from model_extractor import Extractor
+# from model_extractor import Extractor
+from my_extractor import Extractor
 from loss import ExtractorLoss
 from dataset_loader import DatasetLoader
 import torch
@@ -199,7 +200,7 @@ def plot_results(epochs_results, results_path):
     plt.close()
 
 if __name__ == "__main__":
-    num_of_epochs = 30
+    num_of_epochs = 3
     batch_size = 1
     config_data = yaml.safe_load(open("config_files/config_extractor_synthetic.yaml"))
     data = config_data["data"]
