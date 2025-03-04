@@ -30,7 +30,7 @@ class EstimatorTrainer:
         for i in range(batch_size):
             data = self.train_data_loader.get_sequence()
             sequence[i] = data[0]
-            hr_data[i] = data[1]
+            hr_data[i] = data[1] / 60
             epoch_done = not self.train_data_loader.next_sequence()
         return sequence, hr_data, epoch_done
 

@@ -35,7 +35,7 @@ def get_max_freq(output,fps, hr):
     fft_values = fft_values[valid_indices]
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    # plot_sequence(output,freqs, fft_values, hr, "trash")
+    plot_sequence(output,freqs, fft_values, hr, "trash")
     
     return max_freq
 
@@ -85,7 +85,7 @@ def evaluate_dataset(dataset_loader, model, device, sequence_length = 150, batch
 
                 # evaluate L2 norm metric
                 max_freq = get_max_freq(output_numpy, fs, f_true)
-                L2 = np.abs(max_freq - f_true)
+                L2 = np.abs(max_freq - f_true) * 60 # convert to BPM
                 L2_list.append(L2)
                 progress = dataset_loader.progress()
                 print("progress", int(progress[0]/progress[1]*100),"%", end="\r")
@@ -123,6 +123,7 @@ def evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, devic
 def evaluate_everything(trn_dataset_loader, val_dataset_loader, weights_folder_path, results_path, device, sequence_length = 150, batch_size=1, num_of_epochs = 10, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
     epochs_results = {"trn_L2": [], "trn_SNR": [], "val_L2": [], "val_SNR": []}
     for i in range(num_of_epochs + 1):
+        i = 0
         weights_path = os.path.join(weights_folder_path,"model_epoch_" + str(i-1) + ".pth")
         trn_L2, trn_SNR, val_L2, val_SNR = evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, device, sequence_length, batch_size, delta, f_range, sampling_f)
         epochs_results["trn_L2"].append(trn_L2)
@@ -192,7 +193,7 @@ if __name__ == "__main__":
     batch_size = 1
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_extractor_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_extractor.yaml"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]
