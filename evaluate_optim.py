@@ -66,7 +66,7 @@ def evaluate_dataset(dataset_loader, model, device, sequence_length=150, batch_s
                 f_true_tensor = torch.from_numpy(f_true_list[:n_of_sequences]).to(device)
                 fs_tensor = torch.from_numpy(fs_list[:n_of_sequences]).to(device)
                 loss = loss_fn(output, f_true_tensor, fs_tensor, delta, sampling_f, f_range)
-                SNR_list.append(-loss.item())
+                SNR_list.append(loss.item())
 
                 # Reshape outputs for FFT processing
                 output_batch = output.detach().cpu().numpy().reshape(n_of_sequences, sequence_length)
@@ -78,9 +78,9 @@ def evaluate_dataset(dataset_loader, model, device, sequence_length=150, batch_s
                     fps = fs_array[0]
                     output_centered = output_batch - np.mean(output_batch, axis=1, keepdims=True)
                     fft_values = np.abs(np.fft.rfft(output_centered, axis=1))
-                    freqs = np.fft.rfftfreq(sequence_length, d=1 / (fps * 60))
+                    freqs = np.fft.rfftfreq(sequence_length, d=1 /fps )
                     fft_values[:, 0] = 0  # ignore DC
-                    valid_mask = (freqs > 40) & (freqs <= 240)
+                    valid_mask = (freqs > 40/60) & (freqs <= 240/60)
                     if np.any(valid_mask):
                         fft_valid = fft_values[:, valid_mask]
                         freqs_valid = freqs[valid_mask]
@@ -90,11 +90,11 @@ def evaluate_dataset(dataset_loader, model, device, sequence_length=150, batch_s
                     else:
                         for i in range(n_of_sequences):
                             max_freq = get_max_freq(output_batch[i], fs_array[i])
-                            L2_list.append(np.abs(max_freq - f_true_array[i]))
+                            L2_list.append(np.abs(max_freq - f_true_array[i])*60)
                 else:
                     for i in range(n_of_sequences):
                         max_freq = get_max_freq(output_batch[i], fs_array[i])
-                        L2_list.append(np.abs(max_freq - f_true_array[i]))
+                        L2_list.append(np.abs(max_freq - f_true_array[i])*60)
 
                 batch_counter += 1
                 if batch_counter % 10 == 0:
@@ -205,7 +205,7 @@ def plot_results(epochs_results, results_path):
 if __name__ == "__main__":
     num_of_epochs = 3
     batch_size = 1
-    config_data = yaml.safe_load(open("config_files/config_extractor_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_extractor.yaml"))
     data = config_data["data"]
     hr_data = config_data["hr_data"]
     train = config_data["train"]

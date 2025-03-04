@@ -24,7 +24,7 @@ if __name__ == "__main__":
     weights_path = os.path.join("output","estimator_weights","weights_exp1.pth")
     device = torch.device("cuda:0")
     dataset_path = os.path.join("datasets", "estimator_synthetic")
-    train_videos_list = ["video_50.csv"]
+    train_videos_list = ["video_120.csv"]
 
     data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=150, step_size=50)
 
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         # save fig1
         fig1.savefig(os.path.join("trash","sequence.png"))
         
-        print(f"predicted hr:{predicted_hr}, real hr:{real_hr}")
+        print(f"predicted hr:{predicted_hr}, real hr:{real_hr/60}")
         data_loader.next_sequence()
 
 
