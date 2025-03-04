@@ -1,6 +1,6 @@
 import torch
-# from model_extractor import Extractor
-from my_extractor import Extractor
+from model_extractor import Extractor
+# from my_extractor import Extractor
 from loss import ExtractorLoss
 from dataset_loader import DatasetLoader
 import numpy as np

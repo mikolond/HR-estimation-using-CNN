@@ -1,4 +1,5 @@
-from model_extractor import Extractor
+# from model_extractor import Extractor
+from my_extractor import Extractor
 from dataset_loader import DatasetLoader
 import torch
 import numpy as np
@@ -36,19 +37,21 @@ def process_video(model, extractor_dataset_path, video, estimator_dataset_path, 
 
 if __name__ == "__main__":
     # load extractor dataset
-    dataset_path = os.path.join("datasets", "dataset_ecg_fitness")
-    N = 300
+    dataset_path = os.path.join("datasets", "dataset_synthetic")
+    N = 600
     videos_list = os.listdir(dataset_path)
+    # keep only the names that contains "video"
+    videos_list = [video for video in videos_list if "video" in video]
 
 
     # load extractor model
-    weights_path = os.path.join("output","weights","model_epoch_29.pth")
-    # device_id = input("Enter the device number: ")
-    # if torch.cuda.is_available():
-    #     device = torch.device("cuda:" + device_id)
-    # else:
-    #     device = torch.device("cpu")
-    device = torch.device("cpu")
+    weights_path = os.path.join("output","weights","model_epoch_4.pth")
+    device_id = input("Enter the device number: ")
+    if torch.cuda.is_available():
+        device = torch.device("cuda:" + device_id)
+    else:
+        device = torch.device("cpu")
+    # device = torch.device("cpu")
 
     extractor = Extractor()
     extractor.eval()
@@ -56,7 +59,7 @@ if __name__ == "__main__":
     extractor.load_state_dict(torch.load(weights_path, map_location=device))
 
     # estimaotr dataset path
-    estimator_dataset_path = os.path.join("datasets", "estimator_ecg_fitness")
+    estimator_dataset_path = os.path.join("datasets", "estimator_synthetic")
 
     for video in videos_list:
         print("Processing video " + video)

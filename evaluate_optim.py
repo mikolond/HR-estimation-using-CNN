@@ -1,5 +1,5 @@
-# from model_extractor import Extractor
-from my_extractor import Extractor
+from model_extractor import Extractor
+# from my_extractor import Extractor
 from loss import ExtractorLoss
 from dataset_loader import DatasetLoader
 import torch
@@ -16,23 +16,26 @@ delta = 5 / 60  # offset from the true frequency
 f_range = np.array([40, 240]) / 60  # valid frequency range in BPM (converted to Hz in minutes)
 sampling_f = 1 / 60  # sampling frequency in loss calculation
 
-def get_max_freq(output, fps):
-    """
-    Use the real FFT to get the frequency with the highest amplitude (ignoring DC).
-    The FFT is computed on a signal with its mean removed.
-    """
-    output_centered = output - np.mean(output)
-    fft_values = np.abs(np.fft.rfft(output_centered))
-    freqs = np.fft.rfftfreq(len(output), d=1 / (fps * 60))
-    # Ignore DC component
+def get_max_freq(output,fps, hr):
+    '''Use fourier transform to get the frequency with the highest amplitude and plots the frequency spectrum.
+        other than the 0 HZ.
+    '''
+    output = output - np.mean(output)  # Remove DC component
+    freqs = np.fft.fftfreq(len(output), d=1/fps)
+    fft_values = np.fft.fft(output)
+    fft_values = np.abs(fft_values) 
+    
+    # Ignore the zero frequency component
     fft_values[0] = 0
-    valid_mask = (freqs > 40) & (freqs <= 240)
-    if not np.any(valid_mask):
-        return 0.0
-    fft_values_valid = fft_values[valid_mask]
-    freqs_valid = freqs[valid_mask]
-    max_idx = np.argmax(fft_values_valid)
-    max_freq = freqs_valid[max_idx]
+    
+
+    valid_indices = (freqs > 40/60) & (freqs <= 240/60)
+    freqs = freqs[valid_indices]
+    fft_values = fft_values[valid_indices]
+    max_freq_index = np.argmax(fft_values)
+    max_freq = freqs[max_freq_index]
+    # plot_sequence(output,freqs, fft_values, hr, "trash")
+    
     return max_freq
 
 def evaluate_dataset(dataset_loader, model, device, sequence_length=150, batch_size=1,
