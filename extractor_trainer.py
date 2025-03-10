@@ -49,7 +49,7 @@ class ExtractorTrainer:
 
 
     def load_model(self, model_path):
-        self.model.load_state_dict(torch.load(model_path))
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
 
     def train(self):
         path_to_save = os.path.join(self.weights_path, "model_epoch_-1.pth")
@@ -261,5 +261,6 @@ if __name__ == "__main__":
     else:
         device = torch.device("cuda:" + device)
     trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, learning_rate=lr, batch_size=batch_size, num_epochs=num_epochs, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = weights_path, debug=DEBUG)
+    # trainer.load_model("output/weights/model_epoch_19.pth")
     trainer.train()
 

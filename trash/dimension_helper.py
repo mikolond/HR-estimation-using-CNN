@@ -4,17 +4,21 @@ def get_dims(input, kernel, stride, padding=0):
 
 
 if __name__ == "__main__":
-    dim1 = 192
-    dim2 = 128
-    for i in range(4):
+    dim1 = 150
+    dim2 = 0
+    dim1 = get_dims(dim1, 30, 1, 0)
+    for i in range(10):
         # conv
-        dim1 = get_dims(dim1, 15, 1, 1)
-        dim2 = get_dims(dim2, 10, 1, 1)
-        print(f"Dim1: {dim1}, iteration: {i}")
-        print(f"Dim2: {dim2}, iteration: {i}")
+        dim1 = get_dims(dim1, 10, 1, 0)
+        dim2 = get_dims(dim2, 0, 1, 1)
+        # print(f"Dim1: {dim1}, iteration: {i}")
+        # print(f"Dim2: {dim2}, iteration: {i}")
         # max pool
-        dim1 = get_dims(dim1, 4, 2, 0)
-        dim2 = get_dims(dim2, 4, 2, 0)
+        if i % 3 == 0:
+            dim1 = get_dims(dim1, 10, 1, 0)
+            dim2 = get_dims(dim2, 0, 10, 0)
+        dim1 = get_dims(dim1, 0, 1, 0)
+        # dim2 = get_dims(dim2, 0, 2, 0)
         print(f"Dim1: {dim1}, iteration: {i}")
         print(f"Dim2: {dim2}, iteration: {i}")
 

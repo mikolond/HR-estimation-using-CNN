@@ -21,18 +21,21 @@ class EstimatorTrainer:
         self.model = Estimator()
         self.model.to(device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-        self.criterion = EstimatorLoss().to(device)
+        # self.criterion = EstimatorLoss().to(device)
+        self.criterion = torch.nn.MSELoss().to(device)
 
     def create_batch(self, batch_size=1):
         sequence = np.zeros((batch_size,150))
         hr_data = np.zeros((batch_size))
         epoch_done = False
         for i in range(batch_size):
-            data = self.train_data_loader.get_sequence()
-            sequence[i] = data[0]
-            hr_data[i] = data[1] / 60
+            seq, hr = self.train_data_loader.get_sequence()
+            sequence[i] = seq
+            hr_data[i] = hr/60
             epoch_done = not self.train_data_loader.next_sequence()
-        return sequence, hr_data, epoch_done
+            progress = self.train_data_loader.get_progress()
+            # print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
+        return sequence, hr_data, epoch_done, progress
 
     def validate(self):
         self.model.eval()
@@ -41,15 +44,16 @@ class EstimatorTrainer:
         epoch_done = False
         with torch.no_grad():
             while not epoch_done:
-                sequence, hr_data, epoch_done = self.create_batch(1)
+                sequence, hr_data, epoch_done,_ = self.create_batch(1)
                 sequence = sequence.reshape(1,150,1).transpose(0,2,1)
                 x = torch.tensor(sequence).float().to(self.device)
-                output = self.model(x)
-                loss = self.criterion(output, hr_data)
+                output = self.model(x).reshape(1)
+                loss = self.criterion(output, torch.tensor(hr_data).to(self.device))
+                # print("valid predicted hr:", int(output.item()*60), "real hr:", int(hr_data[0]*60),"loss:",loss.item()*60)
                 valid_count += 1
                 valid_loss += loss.item()
         self.model.train()
-        print(f"Validation Loss: {valid_loss/valid_count}")
+        print(f"Validation Loss: {valid_loss/valid_count * 60}")
         
 
 
@@ -61,18 +65,22 @@ class EstimatorTrainer:
             epoch_done = False
             epoch_start = time.time()
             while not epoch_done:
-                sequence, hr_data, epoch_done = self.create_batch(self.batch_size)
+                sequence, hr_data, epoch_done, progress = self.create_batch(self.batch_size)
                 sequence = sequence.reshape(self.batch_size,150,1).transpose(0,2,1)
-                self.optimizer.zero_grad()
+
                 x = torch.tensor(sequence).float().to(self.device)
-                output = self.model(x)
-                loss = self.criterion(output, hr_data)
+                output = self.model(x).reshape(self.batch_size)
+                loss = self.criterion(output, torch.tensor(hr_data, dtype=torch.float).to(self.device))
                 loss.backward()
                 self.optimizer.step()
+                self.optimizer.zero_grad()
                 train_count += 1
                 train_loss += loss.item()
+                print(f"Epoch progress: {progress[0]}/{progress[1]}", end="\r")
+                # print(f"predicted hr:{(output.detach().cpu().numpy()*60).astype(np.int32)}real hr:{(np.array(hr_data)*60).astype(np.int32),"loss:",(loss.detach().cpu().numpy()*60).astype(np.int32)}")
+                # print("train predicted hr:", int(output.item()*60), "real hr:", int(hr_data[0]*60),"loss:",loss.item()*60)
             after_train = time.time()
-            print(f"Epoch: {epoch}, Loss: {train_loss/train_count}")
+            print(f"Epoch: {epoch}, Loss: {train_loss/train_count*60}")
             self.validate()
             after_valid = time.time()
             self.train_data_loader.reset()
@@ -115,10 +123,10 @@ if __name__ == "__main__":
         valid_videos_list[i] += ".csv"
 
     # create training data loader
-    train_data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=150, step_size=1)
+    train_data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=150, step_size=50)
     
     # create validation data loader
-    valid_data_loader = EstimatorDatasetLoader(dataset_path, valid_videos_list, N=150, step_size=1)
+    valid_data_loader = EstimatorDatasetLoader(dataset_path, valid_videos_list, N=150, step_size=150)
 
     device = input("Device to train on: ")
     if not torch.cuda.is_available():
@@ -127,7 +135,7 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + device)
     # device = torch.device("cpu")
 
-    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=1, num_epochs=20, lr=0.0001)
+    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=50, num_epochs=100, lr=0.01)
     trainer.train()
     weights_path = os.path.join("output","estimator_weights","weights_exp1.pth")
     trainer.save_model(weights_path)

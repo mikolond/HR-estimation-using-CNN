@@ -44,15 +44,16 @@ class Estimator(nn.Module):
 
 
         alpha_elu = 1.0 # ELU alpha
-        channels_1 = 64
-        channels_2 = 64
-        channels_3 = 64
-        channels_4 = 64
-        channels_5 = 64
+        channels_1 = 1000
+        channels_2 = 1000
+        channels_3 = 1000
+        channels_4 = 1000
+        channels_5 = 1000
+
 
 
         # 150 (1-dimensional, 1 channel)
-        self.conv1 = create_layer(["BN",1,"DP",0.1,"CONV", 1, channels_1 , conv_kernel, 1, 0,"BN",channels_1,"ELU", alpha_elu])
+        self.conv1 = create_layer(["BN",1,"DP",0.1,"CONV", 1, channels_1 , 10, 1, 0,"BN",channels_1,"ELU", alpha_elu])
         # 141
         self.conv2 = create_layer(["DP",0.1,"CONV", channels_1, channels_1 , conv_kernel, 1, 0,"BN",channels_1,"ELU", alpha_elu])
         # 132
@@ -77,6 +78,34 @@ class Estimator(nn.Module):
         self.conv_last = create_layer(["DP",0.5,"CONV", channels_5, 1, conv_kernel, 1, 0,"MP",max_pool_kernel, 1, "BN", 1, "ELU", alpha_elu])
         # 6
         self.ada_avg_pool = nn.AdaptiveAvgPool1d(output_size=1)
+
+
+        # # 150 (1-dimensional, 1 channel)
+        # self.conv1 = create_layer(["BN",1,"DP",0.1,"CONV", 1, channels_1 , (3), 1, 0,"BN",channels_1,"ELU", alpha_elu])
+        # # 141
+        # self.conv2 = create_layer(["DP",0.1,"CONV", channels_1, channels_1 , conv_kernel, 1, 0,"BN",channels_1,"ELU", alpha_elu])
+        # # 132
+        # self.conv3 = create_layer(["DP",0.1,"CONV", channels_1, channels_1 , conv_kernel, 1, 0,"MP",max_pool_kernel, 1 ,"BN", channels_1, "ELU", alpha_elu])
+        # # 114
+        # self.conv4 = create_layer(["DP",0.1,"CONV", channels_1, channels_2 , conv_kernel, 1, 0,"BN",channels_2,"ELU", alpha_elu])
+        # # 105
+        # self.conv5 = create_layer(["DP",0.1,"CONV", channels_2, channels_2 , conv_kernel, 1, 0, "BN", channels_2, "ELU", alpha_elu])
+        # # 96
+        # self.conv6 = create_layer(["DP",0.1,"CONV", channels_2, channels_2 , conv_kernel, 1, 0, "MP",max_pool_kernel, 1 ,"BN", channels_2, "ELU", alpha_elu])
+        # # 78
+        # self.conv7 = create_layer(["DP",0.2,"CONV", channels_2, channels_3 , conv_kernel, 1, 0, "BN", channels_3, "ELU", alpha_elu])
+        # # 69
+        # self.conv8 = create_layer(["DP",0.2,"CONV", channels_3, channels_3 , conv_kernel, 1, 0, "BN", channels_3, "ELU", alpha_elu])
+        # # 60
+        # self.conv9 = create_layer(["DP",0.2,"CONV", channels_3, channels_3 , conv_kernel, 1, 0, "MP",max_pool_kernel, 1 ,"BN", channels_3, "ELU", alpha_elu])
+        # # 42
+        # self.conv10 = create_layer(["DP",0.3,"CONV", channels_3, channels_4 , conv_kernel, 1, 0, "BN", channels_4, "ELU", alpha_elu])
+        # # 33
+        # self.conv11 = create_layer(["DP",0.3,"CONV", channels_4, channels_5 , conv_kernel, 1, 0, "BN", channels_5, "ELU", alpha_elu])
+        # # 24
+        # self.conv_last = create_layer(["DP",0.5,"CONV", channels_5, 1, conv_kernel, 1, 0,"MP",max_pool_kernel, 1, "BN", 1, "ELU", alpha_elu])
+        # # 6
+        # self.ada_avg_pool = nn.AdaptiveAvgPool1d(output_size=1)
         
         self.init_weights()
 
