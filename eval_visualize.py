@@ -23,6 +23,7 @@ def get_max_freq(output,fps, hr):
     '''
     output = output - np.mean(output)  # Remove DC component
     freqs = np.fft.fftfreq(len(output), d=1/fps)
+    print("freqs", freqs)
     fft_values = np.fft.fft(output)
     fft_values = np.abs(fft_values) 
     
@@ -32,11 +33,50 @@ def get_max_freq(output,fps, hr):
 
     valid_indices = (freqs > 40/60) & (freqs <= 240/60)
     freqs = freqs[valid_indices]
+    print("freqs", freqs*60)
     fft_values = fft_values[valid_indices]
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    plot_sequence(output,freqs, fft_values, hr, "trash")
+    # plot_sequence(output,freqs, fft_values, hr, "trash")
     
+    return max_freq
+
+def get_max_freq_padded(output, fps, hr, pad_factor=10): # Added pad_factor
+    '''Use fourier transform to get the frequency with the highest amplitude with zero-padding.
+
+    Args:
+        output (np.array): The input signal.
+        fps (float): Sampling rate (frames per second).
+        hr (str): Description for plot title.
+        pad_factor (int): Factor by which to increase signal length through padding.
+                          e.g., pad_factor=10 means padded length is 10 times original.
+
+    Returns:
+        float: The frequency with the highest amplitude (in Hz).
+    '''
+    output = output - np.mean(output)  # Remove DC component
+    original_length = len(output)
+    padded_length = original_length * pad_factor # Calculate padded length
+    padding = np.zeros(padded_length - original_length) # Create zero padding
+    output_padded = np.concatenate((output, padding)) # Apply padding
+
+    freqs = np.fft.fftfreq(padded_length, d=1/fps) # Use padded length for freqs
+    # print("freqs (padded)", freqs)
+    fft_values = np.fft.fft(output_padded)
+    fft_values = np.abs(fft_values)
+
+    # Ignore the zero frequency component
+    fft_values[0] = 0
+
+    valid_indices = (freqs > 40/60) & (freqs <= 240/60)
+    freqs = freqs[valid_indices]
+    # print("freqs (padded, BPM)", freqs * 60)
+    fft_values = fft_values[valid_indices]
+
+    max_freq_index = np.argmax(fft_values)
+    max_freq = freqs[max_freq_index]
+    plot_sequence(output, freqs, fft_values, hr, "trash") # Different filename for padded plot
+
     return max_freq
 
 def plot_sequence(sequence,freqs,fft, real_hr, save_path):
@@ -75,7 +115,7 @@ def evaluate_dataset(dataset_loader, model, device, sequence_length = 150, batch
             x = torch.tensor(sequence.reshape(n_of_sequences * sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(device)
             output = model(x).reshape(n_of_sequences, sequence_length)
             loss = ExtractorLoss().forward(output, torch.tensor(f_true_list).to(device), torch.tensor(fs_list).to(device), delta, sampling_f, f_range)
-            SNR_list.append(-loss.item())
+            SNR_list.append(loss.item())
             output_numpy_batch = output.detach().cpu().numpy().reshape(n_of_sequences * sequence_length)
             for i in range(n_of_sequences):
                 output_numpy = output_numpy_batch[i*sequence_length:sequence_length*(i+1)]
@@ -84,7 +124,7 @@ def evaluate_dataset(dataset_loader, model, device, sequence_length = 150, batch
 
 
                 # evaluate L2 norm metric
-                max_freq = get_max_freq(output_numpy, fs, f_true)
+                max_freq = get_max_freq_padded(output_numpy, fs, f_true)
                 L2 = np.abs(max_freq - f_true) * 60 # convert to BPM
                 L2_list.append(L2)
                 progress = dataset_loader.progress()
@@ -123,7 +163,6 @@ def evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, devic
 def evaluate_everything(trn_dataset_loader, val_dataset_loader, weights_folder_path, results_path, device, sequence_length = 150, batch_size=1, num_of_epochs = 10, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
     epochs_results = {"trn_L2": [], "trn_SNR": [], "val_L2": [], "val_SNR": []}
     for i in range(num_of_epochs + 1):
-        i = 0
         weights_path = os.path.join(weights_folder_path,"model_epoch_" + str(i-1) + ".pth")
         trn_L2, trn_SNR, val_L2, val_SNR = evaluate_weights(trn_dataset_loader, val_dataset_loader, weights_path, device, sequence_length, batch_size, delta, f_range, sampling_f)
         epochs_results["trn_L2"].append(trn_L2)
@@ -189,7 +228,7 @@ def plot_results(epochs_results, results_path):
 
 
 if __name__ == "__main__":
-    num_of_epochs = 3
+    num_of_epochs = 9
     batch_size = 1
     import yaml
     import csv

@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
 
     # load extractor model
-    weights_path = os.path.join("output","weights","model_epoch_2.pth")
+    weights_path = os.path.join("output","weights","model_epoch_5.pth")
     device_id = input("Enter the device number: ")
     if torch.cuda.is_available():
         device = torch.device("cuda:" + device_id)

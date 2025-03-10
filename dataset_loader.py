@@ -127,6 +127,7 @@ class DatasetLoader:
         Reset the dataset loader 
         if augmentation is enabled, the frames will be augmented (random color added and rotated by a small angle)
         '''
+
         self.N_sequences = 0
         for video in self.videos:
             images_count = len(os.listdir(os.path.join(self.dataset_path, video))) - 2
@@ -134,7 +135,7 @@ class DatasetLoader:
         
         # shuffle the videos
         self.current_video_idx = 0
-        # random.shuffle(self.videos)
+        random.shuffle(self.videos)
         self.load_next_video()
         self.current_N_sequence = 0
 

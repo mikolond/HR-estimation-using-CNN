@@ -36,6 +36,7 @@ class EstimatorDatasetLoader:
         '''
         self.N_sequences = 0
         self.current_video_index = 0
+        random.shuffle(self.videos)
 
         self.load_next_video()
 
@@ -80,6 +81,7 @@ class EstimatorDatasetLoader:
             self.current_N_sequence = np.array(N_data)[:,1].astype(np.float64)
             self.current_hr_data = np.array(N_data)[:,2].astype(np.int64)
             self.current_row += self.step_size + self.N
+            return True
         else:
             # load the next video
             self.current_video_index += 1
@@ -97,7 +99,7 @@ class EstimatorDatasetLoader:
 
 
 if __name__ == "__main__":
-    dataset_path = os.path.join("datasets", "estimator_ecg_fitness")
+    dataset_path = os.path.join("datasets", "estimator_synthetic")
     loader = EstimatorDatasetLoader(dataset_path, N = 100, step_size = 100)
 
     data = loader.get_sequence()
@@ -110,6 +112,7 @@ if __name__ == "__main__":
         print(sequence.shape)
         print("Progress:", loader.get_progress())
         loader_finished = not loader.next_sequence()
+        print("Finished:", loader_finished)
         # loader.reset()
         # print("Reset")
 
