@@ -7,7 +7,7 @@ data:
 optimizer:
     batch_size: 1
     cumulative_batch_size: 1
-    lr: 1e-7
+    lr: 1e-3
     num_epochs: 20
     decrease_lr: False
     lr_decay: 0.25

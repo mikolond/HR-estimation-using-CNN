@@ -75,7 +75,7 @@ def get_max_freq_padded(output, fps, hr, pad_factor=10): # Added pad_factor
 
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    plot_sequence(output, freqs, fft_values, hr, "trash") # Different filename for padded plot
+    # plot_sequence(output, freqs, fft_values, hr, "trash") # Different filename for padded plot
 
     return max_freq
 
@@ -228,11 +228,11 @@ def plot_results(epochs_results, results_path):
 
 
 if __name__ == "__main__":
-    num_of_epochs = 9
+    num_of_epochs = 30
     batch_size = 1
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_extractor.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_extractor_median_1e-4_cum_10.yaml"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]
