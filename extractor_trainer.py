@@ -6,7 +6,6 @@ from dataset_loader import DatasetLoader
 import numpy as np
 import time
 import os
-from torch.utils.tensorboard import SummaryWriter
 import csv
 
 
@@ -38,10 +37,6 @@ class ExtractorTrainer:
         self.current_epoch = 0
         self.current_epoch_time = 0
         self.last_epoch_time = 0
-        if not os.path.exists(os.path.join('net-'+str(learning_rate)[0:10])):
-            os.makedirs(os.path.join('net-'+str(learning_rate)[0:10]))
-
-        self.writer = SummaryWriter(os.path.join('net-'+str(learning_rate)[0:10]+'/'))
         self.train_log_counter = 0
 
         self.weights_path = weights_path
@@ -84,7 +79,6 @@ class ExtractorTrainer:
                     sampling_f = self.hr_data["sampling_f"]
                     loss = self.loss_fc(output, f_true, fs, delta, sampling_f, f_range)
                     self.log_progress(loss.item(), start_time)
-                    self.writer.add_scalar("Loss/train", loss, self.train_log_counter)
                     self.train_log_counter += 1
                     before_backward = time.time()
                     loss.backward()
@@ -120,7 +114,6 @@ class ExtractorTrainer:
                 self.learning_rate *= self.decay_rate
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] = self.learning_rate
-        self.writer.flush()
         # self.plot_validation_loss()
 
     def create_batch(self):
@@ -186,7 +179,6 @@ class ExtractorTrainer:
                 print("loss:{:.4f}".format(valid_loss.item()/valid_count), ",progress:", int(percentage_progress),"%" , end="\r")
                 validation_done = not self.valid_data_loader.next_sequence()
             valid_loss /= valid_count
-            self.writer.add_scalar("Loss/valid", valid_loss, self.current_epoch)
             self.validation_loss_log.append(valid_loss.detach().cpu().numpy().item())
             if valid_loss < self.best_loss:
                 self.best_loss = valid_loss
