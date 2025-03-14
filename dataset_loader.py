@@ -159,7 +159,7 @@ class DatasetLoader:
         Return the current hr
         return: float
         '''
-        return float(np.mean(self.current_hr_data))
+        return float(np.median(self.current_hr_data))
     
     def get_hr_list(self):
         '''

@@ -7,15 +7,16 @@ import matplotlib.pyplot as plt
 import time
 
 class EstimatorEval:
-    def __init__(self, weights_path, device):
+    def __init__(self, weights_path, device, N):
         self.model = Estimator().to(device)
         self.model.eval()
         self.model.load_state_dict(torch.load(weights_path, map_location=device))
         self.device = device
+        self.N = N
 
 
     def infer(self, sequence):
-        sequence = sequence.reshape(1,150,1).transpose(0,2,1)
+        sequence = sequence.reshape(1,self.N,1).transpose(0,2,1)
         x = torch.tensor(sequence).float().to(self.device)
         output = self.model(x)
         return output.item()
@@ -83,11 +84,11 @@ if __name__ == "__main__":
     weights_path = os.path.join("output","estimator_weights","weights_exp1.pth")
     device = torch.device("cuda:0")
     dataset_path = os.path.join("datasets", "estimator_synthetic")
-    train_videos_list = ["video_150.csv"]
+    train_videos_list = ["video_150.csv", "video_1.csv", "video_2.csv", "video_3.csv", "video_4.csv", "video_5.csv", "video_6.csv", "video_7.csv", "video_8.csv", "video_9.csv", "video_10.csv"]
 
-    data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=150, step_size=50)
+    data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=300, step_size=300)
 
-    estimator = EstimatorEval(weights_path,device)
+    estimator = EstimatorEval(weights_path,device, 300)
 
     for i in range(20):
         sequence, real_hr = data_loader.get_sequence()
@@ -98,6 +99,6 @@ if __name__ == "__main__":
         
         print(f"predicted hr:{predicted_hr}, real hr:{real_hr/60}")
         data_loader.next_sequence()
-        time.sleep(1)
+        time.sleep(0.5)
 
 

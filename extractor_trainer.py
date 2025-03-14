@@ -45,6 +45,7 @@ class ExtractorTrainer:
         self.train_log_counter = 0
 
         self.weights_path = weights_path
+        self.best_loss = float("inf")
 
 
 
@@ -187,6 +188,9 @@ class ExtractorTrainer:
             valid_loss /= valid_count
             self.writer.add_scalar("Loss/valid", valid_loss, self.current_epoch)
             self.validation_loss_log.append(valid_loss.detach().cpu().numpy().item())
+            if valid_loss < self.best_loss:
+                self.best_loss = valid_loss
+                torch.save(self.model.state_dict(), os.path.join(self.weights_path, "best_weights.pth"))
 
     def save_model(self):
         user = input("Save model? y/n")
@@ -205,6 +209,8 @@ if __name__ == "__main__":
     valid = config_data["valid"]
     # load data
     weights_path = data["weights_dir"]
+    if not os.path.exists(weights_path):
+        os.makedirs(weights_path)
     benchmark_path = data["benchmark"]
     dataset_path = data["dataset_dir"]
     folders_path = os.path.join(dataset_path, "data.csv")
@@ -261,6 +267,6 @@ if __name__ == "__main__":
     else:
         device = torch.device("cuda:" + device)
     trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, learning_rate=lr, batch_size=batch_size, num_epochs=num_epochs, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = weights_path, debug=DEBUG)
-    # trainer.load_model("output/weights/model_epoch_19.pth")
+    # trainer.load_model("output/synthetic_best_weights.pth")
     trainer.train()
 

@@ -39,21 +39,21 @@ class Estimator(nn.Module):
     def __init__(self):
         super(Estimator, self).__init__()
         # convolution parameters
-        conv_kernel = 10
-        max_pool_kernel = 10
+        conv_kernel = 16
+        max_pool_kernel = 5
 
 
         alpha_elu = 1.0 # ELU alpha
-        channels_1 = 1000
-        channels_2 = 1000
-        channels_3 = 1000
-        channels_4 = 1000
-        channels_5 = 1000
+        channels_1 = 200
+        channels_2 = 128
+        channels_3 = 128
+        channels_4 = 128
+        channels_5 = 128
 
 
 
         # 150 (1-dimensional, 1 channel)
-        self.conv1 = create_layer(["BN",1,"DP",0.1,"CONV", 1, channels_1 , 10, 1, 0,"BN",channels_1,"ELU", alpha_elu])
+        self.conv1 = create_layer(["BN",1,"DP",0.1,"CONV", 1, channels_1 , conv_kernel, 1, 0,"BN",channels_1,"ELU", alpha_elu])
         # 141
         self.conv2 = create_layer(["DP",0.1,"CONV", channels_1, channels_1 , conv_kernel, 1, 0,"BN",channels_1,"ELU", alpha_elu])
         # 132
@@ -112,7 +112,7 @@ class Estimator(nn.Module):
 
     def forward(self, x):
         # normalization
-        x = x - torch.mean(x)
+        x = x - torch.mean(x, dim=-1).unsqueeze(dim=-1)
 
         x = self.conv1(x)
         x = self.conv2(x)
@@ -131,11 +131,12 @@ class Estimator(nn.Module):
         return x
 
     def init_weights(self):
+        print("Initializing weights")
         for layer in self.modules():
-            if type(layer) == nn.Conv2d:
+            if type(layer) == nn.Conv1d:
                 nn.init.xavier_normal_(layer.weight, gain=1)
                 nn.init.zeros_(layer.bias)
-            if type(layer) == nn.BatchNorm2d:
+            if type(layer) == nn.BatchNorm1d:
                 nn.init.uniform_(layer.weight, 0, 0.1)
                 nn.init.zeros_(layer.bias)
             if type(layer) == nn.Linear:

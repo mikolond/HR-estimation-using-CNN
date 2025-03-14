@@ -73,7 +73,7 @@ class Extractor(nn.Module):
 
     def forward(self, x):
         # normalization to [-1, 1]
-        x = x / 255 * 2 - 1
+        # x = x / 255 * 2 - 1
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)

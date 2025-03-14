@@ -38,6 +38,7 @@ def get_max_freq(output,fps, hr):
     
     return max_freq
 
+
 def evaluate_dataset(dataset_loader, model, device, sequence_length = 150, batch_size=1, delta = 5/60, f_range = np.array([40, 240]) / 60, sampling_f = 1/60):
     dataset_loader.reset()
     augment_state = dataset_loader.augmentation
