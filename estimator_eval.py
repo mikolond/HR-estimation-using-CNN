@@ -21,6 +21,43 @@ class EstimatorEval:
         output = self.model(x)
         return output.item()
     
+    def get_average_deviation(self, data_loader):
+        '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
+        hr_data = np.array([])
+        dataset_done = False
+        while not dataset_done:
+            _, real_hr = data_loader.get_sequence()
+            hr_data = np.append(hr_data, real_hr)
+            dataset_done = not data_loader.next_sequence()
+        average_hr = np.mean(hr_data)
+        average_deviation = np.mean(np.abs(hr_data - average_hr))
+        return average_deviation
+    
+    def evaluate(self, trn_loader, val_loader):
+        loss = {}
+        print("evaluation training loss")
+        loss["trn_rmse"], loss["trn_mae"] = self.validate(trn_loader)
+        print("evaluation validation loss")
+        loss["val_rmse"], loss["val_mae"] = self.validate(val_loader)
+        return loss
+    
+    def validate(self, data_loader):
+        self.model.eval()
+        errors = []
+        epoch_done = False
+        with torch.no_grad():
+            while not epoch_done:
+                sequence, hr_data = data_loader.get_sequence()
+                predicted = self.infer(sequence) * 60
+                loss = predicted - hr_data
+                errors.append(loss)
+                epoch_done = not data_loader.next_sequence()
+        errors = np.array(errors)
+        rmse = np.sqrt(np.mean(errors**2))
+        mae = np.mean(np.abs(errors))
+        return rmse, mae
+        
+    
 def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_factor
     '''Use fourier transform to get the frequency with the highest amplitude with zero-padding.
 
@@ -81,24 +118,66 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 
 
 if __name__ == "__main__":
-    weights_path = os.path.join("output","estimator_weights","weights_exp1.pth")
-    device = torch.device("cuda:0")
-    dataset_path = os.path.join("datasets", "estimator_synthetic")
-    train_videos_list = ["video_150.csv", "video_1.csv", "video_2.csv", "video_3.csv", "video_4.csv", "video_5.csv", "video_6.csv", "video_7.csv", "video_8.csv", "video_9.csv", "video_10.csv"]
+    weights_path = os.path.join("output","estimator_weights","weights_ecg2.pth")
 
+    import csv
+    import yaml
+    dataset_path = os.path.join("datasets", "estimator_ecg_fitness")
+    folders_path = os.path.join(dataset_path, "data.csv")
+    folders = []
+    with open(folders_path, 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            folders.append(row)
+
+    benchmark_path = os.path.join("benchmarks", "benchmark_ecg.yaml")
+    benchmark = yaml.safe_load(open(benchmark_path))
+    train_folders = benchmark["trn"]
+    valid_folders = benchmark["val"]
+    train_videos_list = np.array([])
+    valid_videos_list = np.array([])
+
+    for idx in train_folders:
+        train_videos_list = np.append(train_videos_list, np.array(folders[idx]))
+    
+    for idx in valid_folders:
+        valid_videos_list = np.append(valid_videos_list, np.array(folders[idx]))
+
+    # add .csv after every video name
+    for i in range(len(train_videos_list)):
+        train_videos_list[i] += ".csv"
+    for i in range(len(valid_videos_list)):
+        valid_videos_list[i] += ".csv"
     data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=300, step_size=300)
+
+    # create training data loader
+    train_data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=300, step_size=300)
+    
+    # create validation data loader
+    valid_data_loader = EstimatorDatasetLoader(dataset_path, valid_videos_list, N=300, step_size=300)
+
+    device = torch.device("cuda:0")
 
     estimator = EstimatorEval(weights_path,device, 300)
 
-    for i in range(20):
-        sequence, real_hr = data_loader.get_sequence()
-        # print("sequence:",sequence)
-        predicted_hr = estimator.infer(sequence)
-        fig1 = plt.figure()
-        get_max_freq_padded(sequence, 30, real_hr/60, predicted_hr, pad_factor=10)
+    loss = estimator.evaluate(train_data_loader, valid_data_loader)
+    print(loss)
+    train_data_loader.reset()
+    valid_data_loader.reset()
+    average_trn_deviation = estimator.get_average_deviation(train_data_loader)
+    average_val_deviation = estimator.get_average_deviation(valid_data_loader)
+    print("average training deviation:", average_trn_deviation)
+    print("average validation deviation:", average_val_deviation)
+
+    # for i in range(20):
+    #     sequence, real_hr = data_loader.get_sequence()
+    #     # print("sequence:",sequence)
+    #     predicted_hr = estimator.infer(sequence)
+    #     fig1 = plt.figure()
+    #     get_max_freq_padded(sequence, 30, real_hr/60, predicted_hr, pad_factor=10)
         
-        print(f"predicted hr:{predicted_hr}, real hr:{real_hr/60}")
-        data_loader.next_sequence()
-        time.sleep(0.5)
+    #     print(f"predicted hr:{predicted_hr}, real hr:{real_hr/60}")
+    #     data_loader.next_sequence()
+    #     time.sleep(0.5)
 
 

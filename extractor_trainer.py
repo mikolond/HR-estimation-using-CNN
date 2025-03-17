@@ -115,6 +115,7 @@ class ExtractorTrainer:
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] = self.learning_rate
         # self.plot_validation_loss()
+        print("training done, best loss:", self.best_loss)
 
     def create_batch(self):
         sequence = np.zeros((self.batch_size, self.sequence_length, 192, 128, 3))
@@ -193,7 +194,7 @@ if __name__ == "__main__":
     import yaml
 
     import csv
-    config_data = yaml.safe_load(open("config_files/config_extractor_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]

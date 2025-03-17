@@ -101,7 +101,7 @@ class EstimatorTrainer:
 if __name__ == "__main__":
     import csv
     import yaml
-    dataset_path = os.path.join("datasets", "estimator_synthetic")
+    dataset_path = os.path.join("datasets", "estimator_ecg_fitness_latest")
     folders_path = os.path.join(dataset_path, "data.csv")
     folders = []
     with open(folders_path, 'r') as file:
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         for row in reader:
             folders.append(row)
 
-    benchmark_path = os.path.join("benchmarks", "benchmark_synthetic.yaml")
+    benchmark_path = os.path.join("benchmarks", "benchmark_ecg.yaml")
     benchmark = yaml.safe_load(open(benchmark_path))
     train_folders = benchmark["trn"]
     valid_folders = benchmark["val"]
@@ -141,8 +141,8 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + device)
     # device = torch.device("cpu")
 
-    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=300, num_epochs=1000, lr=0.001, best_model_path="output/estimator_weights")
+    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=100, num_epochs=50, lr=0.01, best_model_path="output/estimator_weights")
     trainer.train()
-    weights_path = os.path.join("output","estimator_weights","weights_exp1.pth")
+    weights_path = os.path.join("output","estimator_weights","weights_ecg2.pth")
     trainer.save_model(weights_path)
 
