@@ -51,6 +51,8 @@ class FaceExtractor:
             pt2 = (pt2[0], img.shape[0])
 
         img_face = img[pt1[1]:pt2[1], pt1[0]:pt2[0]]
+        # convert to 192 x 128
+        img_face = cv2.resize(img_face, (128, 192))
         return img_face
 
 

@@ -36,10 +36,6 @@ def process_video(model, extractor_dataset_path, video, estimator_dataset_path, 
                     csv_writer.writerow([i + N * sequence_count, extractor_output[i].item(), hr_data[i]])
                 sequence_count += 1
                 dataset_done = not dataset_loader.next_sequence()
-    # copy file data.csv to estimator_dataset_path from extractor_dataset_path
-    data_csv_path = os.path.join(extractor_dataset_path, "data.csv")
-    estimator_data_csv_path = os.path.join(estimator_dataset_path, "data.csv")
-    os.system(f"cp {data_csv_path} {estimator_data_csv_path}")
     
 
 
@@ -53,7 +49,7 @@ if __name__ == "__main__":
 
 
     # load extractor model
-    weights_path = os.path.join("output","halmos_weights","latest_weights.pth")
+    weights_path = os.path.join("output","weights","extractor_weights_ecg.pth")
     device_id = input("Enter the device number: ")
     if torch.cuda.is_available():
         device = torch.device("cuda:" + device_id)
@@ -67,7 +63,7 @@ if __name__ == "__main__":
     extractor.load_state_dict(torch.load(weights_path, map_location=device))
 
     # estimaotr dataset path
-    estimator_dataset_path = os.path.join("datasets", "estimator_ecg_fitness_latest")
+    estimator_dataset_path = os.path.join("datasets", "estimator_ecg_fitness_best")
 
     for video in videos_list:
         print("Processing video " + video)

@@ -75,6 +75,7 @@ class EstimatorTrainer:
                 sequence = sequence.reshape(self.batch_size,self.train_data_loader.N,1).transpose(0,2,1)
 
                 x = torch.tensor(sequence).float().to(self.device)
+                print("shape of x:",x.shape)
                 output = self.model(x).reshape(self.batch_size)
                 loss = self.criterion(output, torch.tensor(hr_data, dtype=torch.float).to(self.device))
                 loss.backward()
@@ -101,7 +102,7 @@ class EstimatorTrainer:
 if __name__ == "__main__":
     import csv
     import yaml
-    dataset_path = os.path.join("datasets", "estimator_ecg_fitness_latest")
+    dataset_path = os.path.join("datasets", "estimator_ecg_fitness_best")
     folders_path = os.path.join(dataset_path, "data.csv")
     folders = []
     with open(folders_path, 'r') as file:

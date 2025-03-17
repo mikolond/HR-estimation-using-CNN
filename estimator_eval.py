@@ -17,6 +17,7 @@ class EstimatorEval:
 
     def infer(self, sequence):
         sequence = sequence.reshape(1,self.N,1).transpose(0,2,1)
+        print("sequence shape:",sequence.shape)
         x = torch.tensor(sequence).float().to(self.device)
         output = self.model(x)
         return output.item()
@@ -118,11 +119,11 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 
 
 if __name__ == "__main__":
-    weights_path = os.path.join("output","estimator_weights","weights_ecg2.pth")
+    weights_path = os.path.join("output","weights","estimator_weights_ecg.pth")
 
     import csv
     import yaml
-    dataset_path = os.path.join("datasets", "estimator_ecg_fitness")
+    dataset_path = os.path.join("datasets", "estimator_ecg_best")
     folders_path = os.path.join(dataset_path, "data.csv")
     folders = []
     with open(folders_path, 'r') as file:
