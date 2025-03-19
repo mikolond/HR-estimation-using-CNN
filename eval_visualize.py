@@ -1,7 +1,6 @@
-from model_extractor import Extractor
-# from my_extractor import Extractor
-from loss import ExtractorLoss
-from dataset_loader import DatasetLoader
+from Models.extractor_model import Extractor
+from Loss.extractor_loss import ExtractorLoss
+from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -75,7 +74,7 @@ def get_max_freq_padded(output, fps, hr, pad_factor=10): # Added pad_factor
 
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    # plot_sequence(output, freqs, fft_values, hr, "trash") # Different filename for padded plot
+    plot_sequence(output, freqs, fft_values, hr, "trash") # Different filename for padded plot
 
     return max_freq
 
@@ -94,6 +93,7 @@ def plot_sequence(sequence,freqs,fft, real_hr, save_path):
     plt.title("Frequency Spectrum")
     plt.xlabel("Frequency")
     plt.ylabel("Amplitude")
+    plt.legend(["Frequency Spectrum", "Real HR"])
     plt.savefig(os.path.join(save_path, "frequency_spectrum.png"))
     plt.close()
 
@@ -228,8 +228,12 @@ def plot_results(epochs_results, results_path):
 
 
 if __name__ == "__main__":
-    num_of_epochs = 30
-    batch_size = 1
+    model = Extractor()
+    device = torch.device("cpu")
+    model.to(device)
+    weights_path = "output/weights/model_epoch_35.pth"
+    model.load_state_dict(torch.load(weights_path, map_location=device))
+    
     import yaml
     import csv
     config_data = yaml.safe_load(open("config_files/config_extractor_median_1e-4_cum_10.yaml"))
@@ -239,7 +243,7 @@ if __name__ == "__main__":
     train = config_data["train"]
     valid = config_data["valid"]
     # load data
-    weights_path = data["weights_dir"]
+    # weights_path = data["weights_dir"]
     benchmark_path = data["benchmark"]
     dataset_path = data["dataset_dir"]
     folders_path = os.path.join(dataset_path, "data.csv")
@@ -261,39 +265,91 @@ if __name__ == "__main__":
         valid_videos_list = np.append(valid_videos_list, np.array(folders[idx]))
 
     # create training data loader
-    train_sequence_length = train["sequence_length"]
+    train_sequence_length = 300
     train_shift = train["shift"]
     train_augment = train["augment"]
-    train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=train_sequence_length, step_size=train_shift, augmentation=train_augment)
+    train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=300, step_size=300, augmentation=False)
     
     # create validation data loader
-    valid_sequence_length = valid["sequence_length"]
+    valid_sequence_length = 300
     valid_shift = valid["shift"]
     valid_augment = valid["augment"]
-    valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=valid_sequence_length, step_size=valid_shift, augmentation=valid_augment)
+    valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=300, step_size=300, augmentation=False)
 
-    # load HR data setting for loss function
-    delta = hr_data["delta"]/60
-    f_range = np.array(hr_data["frequency_range"])/60
-    sampling_f = hr_data["sampling_frequency"]/60
-    hr_data = {"delta": delta, "f_range": f_range, "sampling_f": sampling_f}
-
-    # device = input("Device to evaluate on: ")
-    # if not torch.cuda.is_available():
-    #     device = torch.device("cpu")
-    # else:
-    #     device = torch.device("cuda:" + device)
-    device = torch.device("cuda:0")
-
-    output_path = data["output_dir"]
-    # crate_folder with date and time in name in the output path
-    date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    results_path = os.path.join(output_path, date_time)
-    os.makedirs(results_path, exist_ok=True)
-
-
-    epochs_results = evaluate_everything(train_data_loader, valid_data_loader, weights_path, results_path, device, train_sequence_length, batch_size,num_of_epochs, delta, f_range, sampling_f)
+    trn_L2, trn_SNR, val_L2, val_SNR = evaluate_weights(train_data_loader, valid_data_loader, weights_path, device, train_sequence_length, 1, delta, f_range, sampling_f)
     print("Results:")
-    print(epochs_results)
-    # save_results(epochs_results, results_path)
-    plot_results(epochs_results, results_path)
+    print("trn_L2:", trn_L2)
+    print("trn_SNR:", trn_SNR)
+    print("val_L2:", val_L2)
+    print("val_SNR:", val_SNR)
+
+    # num_of_epochs = 30
+    # batch_size = 1
+    # import yaml
+    # import csv
+    # config_data = yaml.safe_load(open("config_files/config_extractor_median_1e-4_cum_10.yaml"))
+    # data = config_data["data"]
+    # optimizer = config_data["optimizer"]
+    # hr_data = config_data["hr_data"]
+    # train = config_data["train"]
+    # valid = config_data["valid"]
+    # # load data
+    # weights_path = data["weights_dir"]
+    # benchmark_path = data["benchmark"]
+    # dataset_path = data["dataset_dir"]
+    # folders_path = os.path.join(dataset_path, "data.csv")
+    # folders = []
+    # with open(folders_path, 'r') as file:
+    #     reader = csv.reader(file)
+    #     for row in reader:
+    #         folders.append(row)
+    # benchmark = yaml.safe_load(open(benchmark_path))
+    # train_folders = benchmark["trn"]
+    # valid_folders = benchmark["val"]
+    # train_videos_list = np.array([])
+    # valid_videos_list = np.array([])
+
+    # for idx in train_folders:
+    #     train_videos_list = np.append(train_videos_list, np.array(folders[idx]))
+    
+    # for idx in valid_folders:
+    #     valid_videos_list = np.append(valid_videos_list, np.array(folders[idx]))
+
+    # # create training data loader
+    # train_sequence_length = train["sequence_length"]
+    # train_shift = train["shift"]
+    # train_augment = train["augment"]
+    # train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=train_sequence_length, step_size=train_shift, augmentation=train_augment)
+    
+    # # create validation data loader
+    # valid_sequence_length = valid["sequence_length"]
+    # valid_shift = valid["shift"]
+    # valid_augment = valid["augment"]
+    # valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=valid_sequence_length, step_size=valid_shift, augmentation=valid_augment)
+
+    
+    # # load HR data setting for loss function
+    # delta = hr_data["delta"]/60
+    # f_range = np.array(hr_data["frequency_range"])/60
+    # sampling_f = hr_data["sampling_frequency"]/60
+    # hr_data = {"delta": delta, "f_range": f_range, "sampling_f": sampling_f}
+
+    # # device = input("Device to evaluate on: ")
+    # # if not torch.cuda.is_available():
+    # #     device = torch.device("cpu")
+    # # else:
+    # #     device = torch.device("cuda:" + device)
+    # device = torch.device("cuda:0")
+
+    # output_path = data["output_dir"]
+    # # crate_folder with date and time in name in the output path
+    # date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    # results_path = os.path.join(output_path, date_time)
+    # os.makedirs(results_path, exist_ok=True)
+
+
+    # epochs_results = evaluate_everything(train_data_loader, valid_data_loader, weights_path, results_path, device, train_sequence_length, batch_size,num_of_epochs, delta, f_range, sampling_f)
+    # print("Results:")
+    # print(epochs_results)
+    # # save_results(epochs_results, results_path)
+    # plot_results(epochs_results, results_path)

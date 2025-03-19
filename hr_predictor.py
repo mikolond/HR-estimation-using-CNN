@@ -10,6 +10,66 @@ import matplotlib.pyplot as plt
 
 DEBUG = True
 
+def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_factor
+    '''Use fourier transform to get the frequency with the highest amplitude with zero-padding.
+
+    Args:
+        output (np.array): The input signal.
+        fps (float): Sampling rate (frames per second).
+        hr (str): Description for plot title.
+        pad_factor (int): Factor by which to increase signal length through padding.
+                          e.g., pad_factor=10 means padded length is 10 times original.
+
+    Returns:
+        float: The frequency with the highest amplitude (in Hz).
+    '''
+    output = output - np.mean(output)  # Remove DC component
+    original_length = len(output)
+    padded_length = original_length * pad_factor # Calculate padded length
+    padding = np.zeros(padded_length - original_length) # Create zero padding
+    output_padded = np.concatenate((output, padding)) # Apply padding
+
+    freqs = np.fft.fftfreq(padded_length, d=1/fps) # Use padded length for freqs
+    # print("freqs (padded)", freqs)
+    fft_values = np.fft.fft(output_padded)
+    fft_values = np.abs(fft_values)
+
+    # Ignore the zero frequency component
+    fft_values[0] = 0
+
+    valid_indices = (freqs > 40/60) & (freqs <= 240/60)
+    freqs = freqs[valid_indices]
+    # print("freqs (padded, BPM)", freqs * 60)
+    fft_values = fft_values[valid_indices]
+
+    max_freq_index = np.argmax(fft_values)
+    max_freq = freqs[max_freq_index]
+    plot_sequence(output, freqs, fft_values, hr,predicted, "trash") # Different filename for padded plot
+
+    return max_freq
+
+def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
+    plt.figure()
+    plt.plot(sequence)
+    plt.title("Sequence")
+    plt.xlabel("Frame")
+    plt.ylabel("Amplitude")
+    plt.savefig(os.path.join(save_path, "sequence.png"))
+    plt.close()
+    plt.figure()
+    plt.plot(freqs*60,fft)
+    # plot the real hr as a dot on the graph with y axis value of 0
+    plt.scatter(real_hr*60, 0, color='red')
+    plt.scatter(predicted*60, 0, color='green')
+    plt.title("Frequency Spectrum")
+    plt.xlabel("Frequency [bpm]")
+    plt.ylabel("Amplitude")
+    plt.legend(["Frequency","Real HR", "Predicted HR"])
+    plt.savefig(os.path.join(save_path, "frequency_spectrum.png"))
+    plt.close()
+
+
+
 
 class HRPredictor:
     def __init__(self):
@@ -88,10 +148,14 @@ class HRPredictor:
             x = torch.tensor(sequence).float().to(self.device).reshape(1,1,300)
             print("x shape:",x.shape)
             output = self.estimator(x).detach().cpu().numpy()
+            get_max_freq_padded(sequence.squeeze(), 30, output, output, pad_factor=10)
         return output * 60 # converting from Hz to bpm
     
     def predict(self, faces):
         features = self.extract(faces)
+        print("features shape:",features.shape)
+        plt.plot(features.squeeze())
+        plt.savefig("features.png")
         prediction = self.estimate(features)
         return prediction
     
@@ -111,9 +175,6 @@ class HRPredictor:
             if len(faces) == sequence_length:
                 prediction = self.predict(faces)
                 print("Prediction:", prediction)
-                plt.plot(prediction)
-                plt.savefig("prediction.png")
-                plt.close()
                 predictions.append(prediction)
             else:
                 break
@@ -124,10 +185,10 @@ class HRPredictor:
 if __name__ == '__main__':
     predictor = HRPredictor()
     predictor.set_device(torch.device('cuda'))
-    extractor_weights_path = os.path.join("output","weights","extractor_weights_ecg.pth")
+    extractor_weights_path = os.path.join("output","weights","model_epoch_35.pth")
     predictor.load_extractor_weights(extractor_weights_path)
-    estimator_weights_path = os.path.join("output","weights","estimator_weights_ecg.pth")
+    estimator_weights_path = os.path.join("output","estimator_weights","best_model.pth")
     predictor.load_estimator_weights(estimator_weights_path)
-    video_path = "output_raw.avi"
+    video_path = "test_videos/me_70_phone.mp4"
     predictions = predictor.process_video(video_path, 300)
     print(predictions)

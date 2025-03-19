@@ -1,7 +1,7 @@
 import torch
-from model_estimator import Estimator
-from estimator_loss import EstimatorLoss
-from estimator_dataset_loader import EstimatorDatasetLoader
+from Models.estimator_model import Estimator
+from Loss.estimator_loss import EstimatorLoss
+from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
 import os
 import time
@@ -26,18 +26,19 @@ class EstimatorTrainer:
         self.criterion = EstimatorLoss().to(device)
         # self.criterion = torch.nn.MSELoss().to(device)
 
-    def create_batch(self, batch_size=1):
+    def create_batch(self, data_loader, batch_size=1):
         sequence = np.zeros((batch_size,self.train_data_loader.N))
         hr_data = np.zeros((batch_size))
         epoch_done = False
         for i in range(batch_size):
-            seq, hr = self.train_data_loader.get_sequence()
+            seq, hr = data_loader.get_sequence()
             sequence[i] = seq
             hr_data[i] = hr/60
-            epoch_done = not self.train_data_loader.next_sequence()
-            progress = self.train_data_loader.get_progress()
+            epoch_done = not data_loader.next_sequence()
+            progress = data_loader.get_progress()
             # print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
         return sequence, hr_data, epoch_done, progress
+    
 
     def validate(self):
         self.model.eval()
@@ -46,7 +47,7 @@ class EstimatorTrainer:
         epoch_done = False
         with torch.no_grad():
             while not epoch_done:
-                sequence, hr_data, epoch_done,_ = self.create_batch(1)
+                sequence, hr_data, epoch_done,_ = self.create_batch(self.valid_data_loader,1)
                 sequence = sequence.reshape(1,self.valid_data_loader.N,1).transpose(0,2,1)
                 x = torch.tensor(sequence).float().to(self.device)
                 output = self.model(x).reshape(1)
@@ -71,11 +72,11 @@ class EstimatorTrainer:
             epoch_done = False
             epoch_start = time.time()
             while not epoch_done:
-                sequence, hr_data, epoch_done, progress = self.create_batch(self.batch_size)
+                sequence, hr_data, epoch_done, progress = self.create_batch(self.train_data_loader, self.batch_size)
                 sequence = sequence.reshape(self.batch_size,self.train_data_loader.N,1).transpose(0,2,1)
 
                 x = torch.tensor(sequence).float().to(self.device)
-                print("shape of x:",x.shape)
+                # print("shape of x:",x.shape)
                 output = self.model(x).reshape(self.batch_size)
                 loss = self.criterion(output, torch.tensor(hr_data, dtype=torch.float).to(self.device))
                 loss.backward()
@@ -102,7 +103,7 @@ class EstimatorTrainer:
 if __name__ == "__main__":
     import csv
     import yaml
-    dataset_path = os.path.join("datasets", "estimator_ecg_fitness_best")
+    dataset_path = os.path.join("datasets", "estimator_ecg_fitness_latest")
     folders_path = os.path.join(dataset_path, "data.csv")
     folders = []
     with open(folders_path, 'r') as file:
@@ -142,8 +143,8 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + device)
     # device = torch.device("cpu")
 
-    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=100, num_epochs=50, lr=0.01, best_model_path="output/estimator_weights")
+    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=1, num_epochs=200, lr=0.05, best_model_path="output/estimator_weights")
     trainer.train()
-    weights_path = os.path.join("output","estimator_weights","weights_ecg2.pth")
+    weights_path = os.path.join("output","estimator_weights","weights_latest.pth")
     trainer.save_model(weights_path)
 

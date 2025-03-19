@@ -1,8 +1,8 @@
 import torch
-from model_extractor import Extractor
+from Models.extractor_model import Extractor
 # from my_extractor import Extractor
-from loss import ExtractorLoss
-from dataset_loader import DatasetLoader
+from Loss.extractor_loss import ExtractorLoss
+from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import numpy as np
 import time
 import os
@@ -194,7 +194,7 @@ if __name__ == "__main__":
     import yaml
 
     import csv
-    config_data = yaml.safe_load(open("config_files/config_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_ecg_local.yaml"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]

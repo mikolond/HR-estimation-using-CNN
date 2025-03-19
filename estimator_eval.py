@@ -5,6 +5,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import time
+plot_counter = 0
 
 class EstimatorEval:
     def __init__(self, weights_path, device, N):
@@ -17,7 +18,7 @@ class EstimatorEval:
 
     def infer(self, sequence):
         sequence = sequence.reshape(1,self.N,1).transpose(0,2,1)
-        print("sequence shape:",sequence.shape)
+        # print("sequence shape:",sequence.shape)
         x = torch.tensor(sequence).float().to(self.device)
         output = self.model(x)
         return output.item()
@@ -53,6 +54,8 @@ class EstimatorEval:
                 loss = predicted - hr_data
                 errors.append(loss)
                 epoch_done = not data_loader.next_sequence()
+                # get max freq
+                get_max_freq_padded(sequence, 30, hr_data/60, predicted/60, pad_factor=10)
         errors = np.array(errors)
         rmse = np.sqrt(np.mean(errors**2))
         mae = np.mean(np.abs(errors))
@@ -93,11 +96,13 @@ def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_f
 
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    plot_sequence(output, freqs, fft_values, hr,predicted, "trash") # Different filename for padded plot
+    plot_sequence(output, freqs, fft_values, hr,predicted, "trash/with_learning") # Different filename for padded plot
+    time.sleep(0.5)
 
     return max_freq
 
 def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
+    global plot_counter
     plt.figure()
     plt.plot(sequence)
     plt.title("Sequence")
@@ -113,17 +118,20 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
     plt.title("Frequency Spectrum")
     plt.xlabel("Frequency")
     plt.ylabel("Amplitude")
-    plt.savefig(os.path.join(save_path, "frequency_spectrum.png"))
+    plt.legend(["Frequency","Real HR", "Predicted HR"])
+    if plot_counter <= 50:
+        plt.savefig(os.path.join(save_path, "frequency_spectrum"+str(plot_counter)+".png"))
+        plot_counter += 1
     plt.close()
 
 
 
 if __name__ == "__main__":
-    weights_path = os.path.join("output","weights","estimator_weights_ecg.pth")
+    weights_path = os.path.join("output","estimator_weights","best_model.pth")
 
     import csv
     import yaml
-    dataset_path = os.path.join("datasets", "estimator_ecg_best")
+    dataset_path = os.path.join("datasets", "estimator_ecg_fitness_latest")
     folders_path = os.path.join(dataset_path, "data.csv")
     folders = []
     with open(folders_path, 'r') as file:
