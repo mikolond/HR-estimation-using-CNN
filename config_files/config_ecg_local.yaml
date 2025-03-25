@@ -7,21 +7,21 @@ data:
 optimizer:
     batch_size: 1
     cumulative_batch_size: 1
-    lr: 1e-4
+    lr: 1e-3
     num_epochs: 50
     decrease_lr: False
     lr_decay: 0.5
     lr_decay_epochs: [5, 15,15]
 
 hr_data:
-    frequency_range: [40, 240]
+    frequency_range: [40, 200]
     delta: 3
     sampling_frequency: 1
 
 train:
     sequence_length: 150
     shift: 150
-    augment: True
+    augment: False
 
 valid:
     sequence_length: 150

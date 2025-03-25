@@ -1,6 +1,5 @@
 import torch.nn as nn
 import torch
-import numpy as np
 
 class ExtractorLoss(nn.Module):
     def __init__(self):
@@ -12,7 +11,7 @@ class ExtractorLoss(nn.Module):
         Returns power spectral density of given sequence x.
         """
         indices = torch.arange(len(x), dtype=torch.float32, device=x.device)
-        angles = 2 * np.pi * f_true * indices / fs
+        angles = 2 * torch.pi * f_true * indices / fs
         cos_terms = torch.sum(x * torch.cos(angles))
         sin_terms = torch.sum(x * torch.sin(angles))
         return cos_terms**2 + sin_terms**2
@@ -39,8 +38,8 @@ class ExtractorLoss(nn.Module):
         # print("psd_unwanted:",psd_unwanted)
 
         # Sum PSD values
-        term1 = psd_wanted.mean()*1000
-        term2 = psd_unwanted.mean()
+        term1 = torch.sum(psd_wanted)
+        term2 = torch.sum(psd_unwanted)
         # print("term1:",term1)
         # print("term2:",term2)
 

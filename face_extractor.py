@@ -1,11 +1,12 @@
 import numpy as np
 import cv2
 from insightface.app import FaceAnalysis
+import insightface
 
 
 class FaceExtractor:
     def __init__(self,input_size=(640,480)):
-        self.app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'], alllowed_modules=['detection'])
+        self.app = FaceAnalysis(name="buffalo_sc",providers=['CUDAExecutionProvider', 'CPUExecutionProvider'], alllowed_modules=['detection'])
         self.app.prepare(ctx_id=0, det_size=input_size)
 
         self.previous_bb = None

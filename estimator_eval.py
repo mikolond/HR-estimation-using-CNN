@@ -1,6 +1,6 @@
 import torch
-from model_estimator import Estimator
-from estimator_dataset_loader import EstimatorDatasetLoader
+from Models.estimator_model import Estimator
+from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
 import os
 import matplotlib.pyplot as plt

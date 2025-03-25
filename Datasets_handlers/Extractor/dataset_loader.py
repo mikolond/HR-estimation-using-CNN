@@ -27,7 +27,7 @@ class DatasetLoader:
         # check if the videos are in the dataset path
         for video in self.videos:
             if not os.path.exists(os.path.join(self.dataset_path, video)):
-                raise Exception("Video path does not exist")
+                raise Exception("Video path does not exist:", os.path.join(self.dataset_path, video))
             
         self.reset()
 
@@ -48,7 +48,7 @@ class DatasetLoader:
                     # add random shade
                     frame = np.clip(frame + self.augmentation_color, 0, 255)
                     # flip the image
-                    if self.flip:
+                    if random.choice([True, False]):
                         frame = cv2.flip(frame, 1)
                     if DEBUG:
                         # convert frame to a supported depth
@@ -57,6 +57,10 @@ class DatasetLoader:
                         print("frame shape", frame_to_show.shape)
                         cv2.imshow("frame", frame_to_show)
                         cv2.waitKey(0)
+                    # translate the image randomly
+                    translation = 10
+                    M = np.float32([[1,0,random.randint(-translation, translation)],[0,1,random.randint(-translation, translation)]])
+                    frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
                 self.frames = np.roll(self.frames, -1, axis=0)
                 self.frames[-1:] = frame
                 self.current_image += 1
@@ -135,7 +139,7 @@ class DatasetLoader:
         
         # shuffle the videos
         self.current_video_idx = 0
-        random.shuffle(self.videos)
+        # random.shuffle(self.videos)
         self.load_next_video()
         self.current_N_sequence = 0
 

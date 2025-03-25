@@ -1,5 +1,5 @@
-from model_estimator import Estimator
-from model_extractor import Extractor
+from Models.estimator_model import Estimator
+from Models.extractor_model import Extractor
 from face_extractor import FaceExtractor
 import torch
 import numpy as np

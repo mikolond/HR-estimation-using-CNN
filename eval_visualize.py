@@ -229,14 +229,14 @@ def plot_results(epochs_results, results_path):
 
 if __name__ == "__main__":
     model = Extractor()
-    device = torch.device("cpu")
+    device = torch.device("cuda:0")
     model.to(device)
-    weights_path = "output/weights/model_epoch_35.pth"
+    weights_path = "output/synthetic_weights/model_epoch_2.pth"
     model.load_state_dict(torch.load(weights_path, map_location=device))
     
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_extractor_median_1e-4_cum_10.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_synthetic.yaml"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]

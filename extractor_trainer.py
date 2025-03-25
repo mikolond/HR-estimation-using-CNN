@@ -12,7 +12,7 @@ import csv
 DEBUG = False
 
 class ExtractorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, learning_rate=0.0001, batch_size=1, num_epochs=5, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1], weights_path = None):
+    def __init__(self, train_data_loader, valid_data_loader, device, output_path=None, learning_rate=0.0001, batch_size=1, num_epochs=100, patience = 30, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1], weights_path = None):
         if hr_data is not None:
             self.hr_data = hr_data
         else:
@@ -40,7 +40,13 @@ class ExtractorTrainer:
         self.train_log_counter = 0
 
         self.weights_path = weights_path
-        self.best_loss = float("inf")
+        if not os.path.exists(self.weights_path):
+            os.makedirs(self.weights_path)
+        self.patience = patience
+        self.output_path = output_path
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+        self.valid_loss_log_path = os.path.join(output_path,"valid_loss_log.csv")
 
 
 
@@ -48,12 +54,14 @@ class ExtractorTrainer:
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
 
     def train(self):
-        path_to_save = os.path.join(self.weights_path, "model_epoch_-1.pth")
-        torch.save(self.model.state_dict(), path_to_save)
+        # path_to_save = os.path.join(self.weights_path, "model_epoch_-1.pth")
+        # torch.save(self.model.state_dict(), path_to_save)
         print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "cumulative batch size:", self.cum_batch_size,"lr decay:", self.lr_decay, "decay rate:", self.decay_rate, "decay epchs:", self.decay_rate, "N:", self.sequence_length, "delta:", self.hr_data["delta"], self.hr_data["f_range"], self.hr_data["sampling_f"])
         #  create another folder for model weights
         if not os.path.exists("model_weights"):
             os.makedirs("model_weights")
+        best_valid_loss = float("inf")
+        epochs_without_improvement = 0
         for i in range(self.num_epochs):
             self.current_epoch = i
             start_time = time.time()
@@ -100,22 +108,35 @@ class ExtractorTrainer:
                         print("Time taken for backward pass:", before_optimizer - before_backward)
                         print("Time taken for optimizer step:", time.time() - before_optimizer)
                 train_counter += 1
-            self.validate()
+            valid_loss = self.validate()
+            log_file = open(self.valid_loss_log_path,"a")
+            log_file.write(str(valid_loss.item()) + "\n")
+            log_file.close()
+            if valid_loss < best_valid_loss:
+                best_valid_loss = valid_loss
+                epochs_without_improvement = 0
+                torch.save(self.model.state_dict(), os.path.join(self.weights_path, "best_weights.pth"))
+            else:
+                epochs_without_improvement += 1
+                if epochs_without_improvement > self.patience:
+                    print("Early stopping")
+                    break
             self.train_data_loader.reset()
             self.valid_data_loader.reset()
             self.last_epoch_time = self.current_epoch_time
             print("\nepoch", i, "done")
             print("validation loss", self.validation_loss_log)
             # save weights of this epoch
-            path_to_save = os.path.join(self.weights_path, "model_epoch_" + str(i) + ".pth")
-            torch.save(self.model.state_dict(), path_to_save)
+            # path_to_save = os.path.join(self.weights_path, "model_epoch_" + str(i) + ".pth")
+            # torch.save(self.model.state_dict(), path_to_save)
             # decrease learning rate
             if self.lr_decay and  i in self.decay_epochs:
                 self.learning_rate *= self.decay_rate
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] = self.learning_rate
-        # self.plot_validation_loss()
-        print("training done, best loss:", self.best_loss)
+        print("training done, best loss:", best_valid_loss)
+
+
 
     def create_batch(self):
         sequence = np.zeros((self.batch_size, self.sequence_length, 192, 128, 3))
@@ -181,9 +202,7 @@ class ExtractorTrainer:
                 validation_done = not self.valid_data_loader.next_sequence()
             valid_loss /= valid_count
             self.validation_loss_log.append(valid_loss.detach().cpu().numpy().item())
-            if valid_loss < self.best_loss:
-                self.best_loss = valid_loss
-                torch.save(self.model.state_dict(), os.path.join(self.weights_path, "best_weights.pth"))
+        return valid_loss
 
     def save_model(self):
         user = input("Save model? y/n")
@@ -194,7 +213,7 @@ if __name__ == "__main__":
     import yaml
 
     import csv
-    config_data = yaml.safe_load(open("config_files/config_ecg_local.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]
@@ -206,6 +225,7 @@ if __name__ == "__main__":
         os.makedirs(weights_path)
     benchmark_path = data["benchmark"]
     dataset_path = data["dataset_dir"]
+    output_path = data["output_dir"]
     folders_path = os.path.join(dataset_path, "data.csv")
     folders = []
     with open(folders_path, 'r') as file:
@@ -250,7 +270,8 @@ if __name__ == "__main__":
     lr = float(optimizer["lr"])
     batch_size = optimizer["batch_size"]
     cum_batch_size = optimizer["cumulative_batch_size"]
-    num_epochs = optimizer["num_epochs"]
+    num_epochs = optimizer["max_epochs"]
+    patience = optimizer["patience"]
     decrease_lr = optimizer["decrease_lr"]
     lr_decay = optimizer["lr_decay"]
     lr_decay_epochs = optimizer["lr_decay_epochs"]
@@ -259,7 +280,9 @@ if __name__ == "__main__":
         device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + device)
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, learning_rate=lr, batch_size=batch_size, num_epochs=num_epochs, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = weights_path, debug=DEBUG)
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, output_path=output_path, learning_rate=lr, batch_size=batch_size, 
+                               num_epochs=num_epochs, patience = patience, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, 
+                               lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = weights_path, debug=DEBUG)
     # trainer.load_model("output/synthetic_best_weights.pth")
     trainer.train()
 

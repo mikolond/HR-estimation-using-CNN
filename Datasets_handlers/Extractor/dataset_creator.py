@@ -1,19 +1,20 @@
-from extract_face import FaceExtractor
+from face_extractor import FaceExtractor
 import numpy as np
 import csv
+import json
 import os
 import cv2
 
 DEBUG = True
 
 class DatasetCreator:
-    def __init__(self, path_in, path_out, flag="ecg-fitness", model_path = 'mediapipe_model\\blaze_face_short_range.tflite'):
+    def __init__(self, path_in, path_out, flag="ecg-fitness"):
         if not os.path.exists(path_in):
             raise FileNotFoundError(f"Input path {path_in} does not exist")
         self.path_in = path_in
         self.path_out = path_out
         self.flag = flag
-        self.face_extractor = FaceExtractor(model_path)
+        self.face_extractor = FaceExtractor()
         self.cap = None
         self.actual_frame = 0
         self.actual_file = None
@@ -45,11 +46,13 @@ class DatasetCreator:
     def unload_video(self):
         self.cap.release()
     
-    def create_dataset(self):
+    def create_dataset(self, arg1=None, arg2=None, arg3=None):
         if self.flag == "ecg-fitness":
             self.create_dataset_ecg_fitness()
         elif self.flag == "ecg-fitness-bb":
             self.create_dataset_ecg_fitness_bb()
+        elif self.flag == "pure-bb":
+            self.create_dataset_pure_bb(protocol_path=arg1, hr_path=arg2, bb_path=arg3)
 
     def ecg_process_video(self, src_path, dest_path):
         if DEBUG:
@@ -80,12 +83,7 @@ class DatasetCreator:
                         no_face_streak_max = no_face_streak
                     no_face_streak = 0
                 was_face_before = True
-            # resize image to 192x128
-            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_LINEAR_EXACT)
-            resized_face = cv2.cvtColor(resized_face, cv2.COLOR_RGB2BGR)
-            # save face to video_out_folder name the file as frame number
-            if face is not None:
-                cv2.imwrite(os.path.join(dest_path, f"{i}.png"), resized_face)
+            # resize image to 192x128/mnt/vrg/archive/spetlrad/hr/db/pure
         if DEBUG:
             print(f"Max no face streak: {no_face_streak_max}")
         self.unload_video()
@@ -276,20 +274,130 @@ class DatasetCreator:
                 with open(os.path.join(c920_2_folder, 'hr_data.txt'), 'w') as f:
                     for item in hr_data:
                         f.write(str(item) + "\n")
+    
+    def process_video_pure_bb(self, video_path, hr_data_path, bbox_path, out_path):
+        with open(hr_data_path, "r") as hr_file:
+            hr_data = json.load(hr_file)
+        fp = hr_data["/FullPackage"]
+        imgs = hr_data["/Image"]
+        print("fp length: ", len(fp))
+        print("img_names length: ", len(imgs))
+        bbox = open(bbox_path, "r")
+        hr_out = open(os.path.join(out_path, "hr_data.txt"), "w")
+        with open(os.path.join(out_path, 'fps.txt'), 'w') as f:
+            f.write(str(30))
+        current_data_index = 1
+        current_data_timestamp = fp[1]["Timestamp"]
+        previous_data_timestamp = fp[0]["Timestamp"]
+        current_time_difference = np.inf
+        prev_time_difference = np.inf
+        for i in range(len(imgs)):
+            print("progress: ", i, "/", len(imgs), end="\r")
+
+            img_timestamp = imgs[i]["Timestamp"]
+            while img_timestamp >= current_data_timestamp > previous_data_timestamp and current_data_index < len(fp)-1:
+                current_data_index += 1
+                current_data_timestamp = fp[current_data_index]["Timestamp"]
+                previous_data_timestamp = fp[current_data_index-1]["Timestamp"]
+            prev_time_difference = np.abs(previous_data_timestamp - img_timestamp)
+            current_time_difference = np.abs(current_data_timestamp - img_timestamp)
+            if prev_time_difference < current_time_difference:
+                true_hr = fp[current_data_index-1]["Value"]["pulseRate"]
+            else:
+                true_hr = fp[current_data_index]["Value"]["pulseRate"]
+
+
+
+            frame_name = "Image" + str(img_timestamp) + ".png"
+            frame_path = os.path.join(video_path, frame_name)
+            hr_out.write(str(true_hr) + "\n")
+
+            # load frame
+            frame = cv2.imread(frame_path)
+            # load bbox
+            bbox_line = bbox.readline()
+            bbox_line = bbox_line.strip().split()
+            x_origin, y_origin, bb_width, bb_height = int(float(bbox_line[1])), int(float(bbox_line[2])), int(float(bbox_line[3])), int(float(bbox_line[4]))
+            bb_origin = [x_origin, y_origin]
+            # desired bb ratio
+            bb_ratio = 3/2
+            bb_height_new =bb_ratio * bb_width
+            height_difference = bb_height_new - bb_height
+
+            pt1 = (int(bb_origin[0]), int(bb_origin[1]-height_difference/2))
+            pt2 = (int(bb_origin[0]+bb_width), int(bb_origin[1]+bb_height+height_difference/2))
+                    # check if the bounding box is out of the image and shift the bb if it is
+            if pt1[0] < 0:
+                pt2 = (pt2[0] - pt1[0], pt2[1])
+                pt1 = (0, pt1[1])
+            if pt1[1] < 0:
+                pt2 = (pt2[0], pt2[1] - pt1[1])
+                pt1 = (pt1[0], 0)
+            if pt2[0] > frame.shape[1]:
+                pt1 = (pt1[0] - (pt2[0] - frame.shape[1]), pt1[1])
+                pt2 = (frame.shape[1], pt2[1])
+            if pt2[1] > frame.shape[0]:
+                pt1 = (pt1[0], pt1[1] - (pt2[1] - frame.shape[0]))
+                pt2 = (pt2[0], frame.shape[0])
+
+            face = frame[pt1[1]:pt2[1], pt1[0]:pt2[0]]
+
+            # resize image to 192x128
+            resized_face = cv2.resize(face, (128, 192), interpolation=cv2.INTER_LINEAR_EXACT)
+            if face is not None:
+                cv2.imwrite(os.path.join(out_path, f"{i}.png"), resized_face)
+        bbox.close()
+        hr_out.close()
+        print("")
+
+
+    
+
+    def create_dataset_pure_bb(self, protocol_path, hr_path, bb_path):
+        if not os.path.exists(self.path_out):
+            os.makedirs(self.path_out)
+        # load protocol file
+        protocol = open(protocol_path, "r")
+        for i in range(60):
+            folder_name = protocol.readline().strip()
+            folder = os.path.dirname(folder_name)
+            video_path = os.path.join(self.path_in,folder)
+            hr_data_path = os.path.join(hr_path, folder_name + ".json")
+            bbox_path = os.path.join(bb_path, folder_name + ".face")
+
+            if DEBUG:
+                print(f"Processing video {video_path}")
+                print(f"HR data path: {hr_data_path}")
+                print(f"Bbox path: {bbox_path}")
+            
+            out_path = os.path.join(self.path_out, folder)
+            if not os.path.exists(out_path):
+                os.makedirs(out_path)
+
+            self.process_video_pure_bb(video_path, hr_data_path, bbox_path, out_path)
+
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description="Create dataset")
-    parser.add_argument("path_in", type=str, help="Path to the folder with videos")
-    parser.add_argument("path_out", type=str, help="Path to the folder where the dataset will be saved")
-    parser.add_argument("flag", type=str, help="Flag to determine the dataset type", default="ecg-fitness-bb")
-    args = parser.parse_args()
-    path_in = args.path_in
-    path_out = args.path_out
-    flag = args.flag
-    dataset_creator = DatasetCreator(path_in, path_out, flag)
-    dataset_creator.create_dataset()
+    # import argparse
+    # parser = argparse.ArgumentParser(description="Create dataset")
+    # parser.add_argument("path_in", type=str, help="Path to the folder with videos")
+    # parser.add_argument("path_out", type=str, help="Path to the folder where the dataset will be saved")
+    # parser.add_argument("flag", type=str, help="Flag to determine the dataset type", default="ecg-fitness-bb")
+    # args = parser.parse_args()
+    # path_in = args.path_in
+    # path_out = args.path_out
+    # flag = args.flag
+    # dataset_creator = DatasetCreator(path_in, path_out, flag)
+    # dataset_creator.create_dataset()
+    path_in = "/home/ondrej/Desktop/ptak_download/pure-img/pure-img"
+    path_out = "/home/ondrej/Desktop/ptak_download/pure-img-out"
+    flag = "pure-bb"
+    dc = DatasetCreator(path_in, path_out, flag)
+    protocol_path = "/home/ondrej/Desktop/ptak_download/pure/protocols/all/all.txt"
+    hr_data = "/home/ondrej/Desktop/ptak_download/pure/gt"
+    bb_path = "/home/ondrej/Desktop/ptak_download/pure/bbox"
+    dc.create_dataset(arg1=protocol_path, arg2=hr_data, arg3=bb_path)
 
                 
 

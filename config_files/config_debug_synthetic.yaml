@@ -1,21 +1,22 @@
 data:
     benchmark: "benchmarks/benchmark_debug_synthetic.yaml"
     dataset_dir: "datasets/dataset_synthetic/"
-    output_dir: "output/results/"
-    weights_dir: "output/debug/"
+    output_dir: "output/results/debug/"
+    weights_dir: "output/weights/debug/"
 
 optimizer:
     batch_size: 1
     cumulative_batch_size: 1
-    lr: 1e-3
-    num_epochs: 3
+    lr: 5e-2
+    max_epochs: 10
+    patience: 2
     decrease_lr: False
     lr_decay: 0.25
     lr_decay_epochs: [5, 10, 15, 25]
 
 hr_data:
     frequency_range: [40, 240]
-    delta: 7
+    delta: 5
     sampling_frequency: 1
 
 train:
