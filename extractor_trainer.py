@@ -53,13 +53,18 @@ class ExtractorTrainer:
     def load_model(self, model_path):
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
 
+    def get_delta_from_hr_list(self, hr_list):
+        min_hr = min(hr_list)
+        max_hr = max(hr_list)
+        median_hr = np.median(hr_list)
+        delta = max(abs(min_hr - median_hr), abs(max_hr - median_hr)) / 60 # convert bpm to Hz
+        return delta
+
     def train(self):
         # path_to_save = os.path.join(self.weights_path, "model_epoch_-1.pth")
         # torch.save(self.model.state_dict(), path_to_save)
         print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "cumulative batch size:", self.cum_batch_size,"lr decay:", self.lr_decay, "decay rate:", self.decay_rate, "decay epchs:", self.decay_rate, "N:", self.sequence_length, "delta:", self.hr_data["delta"], self.hr_data["f_range"], self.hr_data["sampling_f"])
         #  create another folder for model weights
-        if not os.path.exists("model_weights"):
-            os.makedirs("model_weights")
         best_valid_loss = float("inf")
         epochs_without_improvement = 0
         for i in range(self.num_epochs):
@@ -70,7 +75,7 @@ class ExtractorTrainer:
             train_counter = 1
             while not epoch_done:
                 epoch_start = time.time()
-                sequence, f_true, fs, n_of_sequences, epoch_done = self.create_batch()
+                sequence, f_true, fs, n_of_sequences, epoch_done, deltas = self.create_batch(self.train_data_loader)
                 if n_of_sequences != 0:
                     before_x = time.time()
                     x = torch.tensor(sequence.reshape(n_of_sequences * self.sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
@@ -85,7 +90,7 @@ class ExtractorTrainer:
                     delta = self.hr_data["delta"]
                     f_range = self.hr_data["f_range"]
                     sampling_f = self.hr_data["sampling_f"]
-                    loss = self.loss_fc(output, f_true, fs, delta, sampling_f, f_range)
+                    loss = self.loss_fc(output, f_true, fs, deltas, sampling_f, f_range)
                     self.log_progress(loss.item(), start_time)
                     self.train_log_counter += 1
                     before_backward = time.time()
@@ -115,7 +120,7 @@ class ExtractorTrainer:
             if valid_loss < best_valid_loss:
                 best_valid_loss = valid_loss
                 epochs_without_improvement = 0
-                torch.save(self.model.state_dict(), os.path.join(self.weights_path, "best_weights.pth"))
+                torch.save(self.model.state_dict(), os.path.join(self.weights_path, "best_extractor_weights.pth"))
             else:
                 epochs_without_improvement += 1
                 if epochs_without_improvement > self.patience:
@@ -138,27 +143,30 @@ class ExtractorTrainer:
 
 
 
-    def create_batch(self):
+    def create_batch(self, data_loader=None):
         sequence = np.zeros((self.batch_size, self.sequence_length, 192, 128, 3))
         f_true = np.zeros((self.batch_size))
         fs = np.zeros((self.batch_size))
+        deltas = np.zeros((self.batch_size))
         n_of_sequences = 0
         epoch_done = False
         for j in range(self.batch_size):
-            cur_seq = self.train_data_loader.get_sequence()
+            cur_seq = data_loader.get_sequence()
             sequence[j] = cur_seq
-            f_true[j] = self.train_data_loader.get_hr() / 60
-            fs[j] = self.train_data_loader.get_fps()
-            epoch_done = not self.train_data_loader.next_sequence()
+            hr_list = data_loader.get_hr_list()
+            deltas[j] = self.get_delta_from_hr_list(hr_list)
+            f_true[j] = data_loader.get_hr() / 60
+            fs[j] = data_loader.get_fps()
+            epoch_done = not data_loader.next_sequence()
             n_of_sequences = j + 1
             if epoch_done and j < self.batch_size:
                 if self.debug:
                     print("epoch done, but batch not full")
                 break
-        return sequence[:n_of_sequences], f_true[:n_of_sequences], fs[:n_of_sequences], n_of_sequences, epoch_done
+        return sequence[:n_of_sequences], f_true[:n_of_sequences], fs[:n_of_sequences], n_of_sequences, epoch_done, deltas
 
     def log_progress(self, loss, start_time):
-        epoch_progress = self.train_data_loader.progress()
+        epoch_progress = self.train_data_loader.get_progress()
         time_passed = time.time() - start_time
         self.current_epoch_time = time_passed/epoch_progress[0] * epoch_progress[1]
         if self.current_epoch == 0:
@@ -183,19 +191,18 @@ class ExtractorTrainer:
             valid_count = 0
             validation_done = False
             while not validation_done:
-                sequence = self.valid_data_loader.get_sequence()
-                f_true = [self.valid_data_loader.get_hr() / 60]
-                fs = [self.valid_data_loader.get_fps()]
-                x = torch.tensor(sequence.transpose(0, 3, 1, 2)).float().to(self.device)
+                sequence, f_true, fs, n_of_sequences, validation_done, deltas = self.create_batch(self.valid_data_loader)
+                if n_of_sequences == 0:
+                    break
+                x = torch.tensor(sequence.reshape(n_of_sequences * self.sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
                 if self.debug:
                     print("shape of x", x.shape)
                 f_true = torch.tensor(f_true).float().to(self.device)
-                output = self.model(x).reshape(1, self.sequence_length)
-                delta = self.hr_data["delta"]
+                output = self.model(x).reshape(n_of_sequences, self.sequence_length)
                 f_range = self.hr_data["f_range"]
                 sampling_f = self.hr_data["sampling_f"]
-                valid_loss += self.loss_fc(output, f_true, fs, delta, sampling_f, f_range)
-                progress = self.valid_data_loader.progress()
+                valid_loss += self.loss_fc(output, f_true, fs, deltas, sampling_f, f_range)
+                progress = self.valid_data_loader.get_progress()
                 percentage_progress = progress[0] / progress[1] * 100
                 valid_count += 1
                 print("loss:{:.4f}".format(valid_loss.item()/valid_count), ",progress:", int(percentage_progress),"%" , end="\r")
@@ -215,6 +222,7 @@ if __name__ == "__main__":
     import csv
     config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
     data = config_data["data"]
+    config_data = config_data["extractor"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]
     train = config_data["train"]

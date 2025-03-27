@@ -1,0 +1,14 @@
+extractor:
+  data1:
+    help1: 10
+    help2: 20
+  data2:
+    help1: 30
+    help2: 40
+estimator:
+  - data3:
+      help1: 50
+      help2: 60
+  - data4:
+      help1: 70
+      help2: 80

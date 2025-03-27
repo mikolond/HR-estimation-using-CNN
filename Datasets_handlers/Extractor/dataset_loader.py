@@ -179,7 +179,7 @@ class DatasetLoader:
         '''
         return self.current_fps
 
-    def progress(self):
+    def get_progress(self):
         '''
         Return the progress of the dataset
         return: float

@@ -36,7 +36,7 @@ def get_max_freq(output,fps, hr):
     fft_values = fft_values[valid_indices]
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    # plot_sequence(output,freqs, fft_values, hr, "trash")
+    plot_sequence(output,freqs, fft_values, hr, "trash")
     
     return max_freq
 
@@ -114,7 +114,7 @@ def evaluate_dataset(dataset_loader, model, device, sequence_length = 150, batch
                 break
             x = torch.tensor(sequence.reshape(n_of_sequences * sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(device)
             output = model(x).reshape(n_of_sequences, sequence_length)
-            loss = ExtractorLoss().forward(output, torch.tensor(f_true_list).to(device), torch.tensor(fs_list).to(device), delta, sampling_f, f_range)
+            loss = ExtractorLoss().forward(output, torch.tensor(f_true_list).to(device), torch.tensor(fs_list).to(device), [delta], sampling_f, f_range)
             SNR_list.append(loss.item())
             output_numpy_batch = output.detach().cpu().numpy().reshape(n_of_sequences * sequence_length)
             for i in range(n_of_sequences):
@@ -127,7 +127,7 @@ def evaluate_dataset(dataset_loader, model, device, sequence_length = 150, batch
                 max_freq = get_max_freq_padded(output_numpy, fs, f_true)
                 L2 = np.abs(max_freq - f_true) * 60 # convert to BPM
                 L2_list.append(L2)
-                progress = dataset_loader.progress()
+                progress = dataset_loader.get_progress()
                 print("progress", int(progress[0]/progress[1]*100),"%", end="\r")
     dataset_loader.reset()
     dataset_loader.augmentation = augment_state
@@ -231,13 +231,14 @@ if __name__ == "__main__":
     model = Extractor()
     device = torch.device("cuda:0")
     model.to(device)
-    weights_path = "output/synthetic_weights/model_epoch_2.pth"
+    weights_path = "output/weights/debug/best_extractor_weights.pth"
     model.load_state_dict(torch.load(weights_path, map_location=device))
     
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
     data = config_data["data"]
+    config_data = config_data["extractor"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]
     train = config_data["train"]
@@ -253,8 +254,8 @@ if __name__ == "__main__":
         for row in reader:
             folders.append(row)
     benchmark = yaml.safe_load(open(benchmark_path))
-    train_folders = benchmark["trn"]
-    valid_folders = benchmark["val"]
+    train_folders = benchmark["val"]
+    valid_folders = benchmark["tst"]
     train_videos_list = np.array([])
     valid_videos_list = np.array([])
 

@@ -1,8 +1,5 @@
-import csv
+import yaml
 
-file = open("test.csv","a")
-
-for i in range(30):
-    file.write(str(i) + "\n")
-
-file.close()
+file = open("yaml_test.yaml")
+data = yaml.load(file, Loader=yaml.FullLoader)
+print(data["extractor"]["data1"])
