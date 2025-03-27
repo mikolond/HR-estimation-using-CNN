@@ -3,6 +3,7 @@ from Models.extractor_model import Extractor
 # from my_extractor import Extractor
 from Loss.extractor_loss import ExtractorLoss
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
+import matplotlib.pyplot as plt
 import numpy as np
 import time
 import os
@@ -48,6 +49,11 @@ class ExtractorTrainer:
             os.makedirs(self.output_path)
         self.valid_loss_log_path = os.path.join(output_path,"valid_loss_log.csv")
 
+        if train_data_loader.get_progress()[1] == 0:
+            raise ValueError("No data in the training dataset")
+        if train_data_loader.get_progress()[1] < self.cum_batch_size:
+            raise ValueError("Cummulatve batch size is larger than the training dataset")
+
 
 
     def load_model(self, model_path):
@@ -58,6 +64,8 @@ class ExtractorTrainer:
         max_hr = max(hr_list)
         median_hr = np.median(hr_list)
         delta = max(abs(min_hr - median_hr), abs(max_hr - median_hr)) / 60 # convert bpm to Hz
+        if delta > 15/60:
+            delta = 15/60
         return delta
 
     def train(self):
@@ -67,7 +75,9 @@ class ExtractorTrainer:
         #  create another folder for model weights
         best_valid_loss = float("inf")
         epochs_without_improvement = 0
+        train_loss_log = []
         for i in range(self.num_epochs):
+            train_loss = 0
             self.current_epoch = i
             start_time = time.time()
             self.model.train()
@@ -91,6 +101,7 @@ class ExtractorTrainer:
                     f_range = self.hr_data["f_range"]
                     sampling_f = self.hr_data["sampling_f"]
                     loss = self.loss_fc(output, f_true, fs, deltas, sampling_f, f_range)
+                    train_loss += loss.item()
                     self.log_progress(loss.item(), start_time)
                     self.train_log_counter += 1
                     before_backward = time.time()
@@ -113,6 +124,8 @@ class ExtractorTrainer:
                         print("Time taken for backward pass:", before_optimizer - before_backward)
                         print("Time taken for optimizer step:", time.time() - before_optimizer)
                 train_counter += 1
+            train_loss /= train_counter
+            train_loss_log.append(train_loss)
             valid_loss = self.validate()
             log_file = open(self.valid_loss_log_path,"a")
             log_file.write(str(valid_loss.item()) + "\n")
@@ -140,6 +153,20 @@ class ExtractorTrainer:
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] = self.learning_rate
         print("training done, best loss:", best_valid_loss)
+        # plot training loss
+        plt.plot(train_loss_log)
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Training loss - Extractor")
+        plt.savefig(os.path.join(self.output_path, "extractor_train_loss.png"))
+        plt.clf()
+        # plot validation loss
+        plt.plot(self.validation_loss_log)
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Validation loss - Extractor")
+        plt.savefig(os.path.join(self.output_path, "extractor_valid_loss.png"))
+        plt.close()
 
 
 

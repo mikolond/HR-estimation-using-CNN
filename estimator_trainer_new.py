@@ -4,6 +4,7 @@ from Models.extractor_model import Extractor
 from Loss.estimator_loss import EstimatorLoss
 # from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import time
@@ -12,7 +13,7 @@ DEBUG = False
 
 
 class EstimatorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, extractor_model, lr = 0.01, batch_size=1, num_epochs = 5, best_model_path = None):
+    def __init__(self, train_data_loader, valid_data_loader, device, extractor_model,output_path = None, lr = 0.01, batch_size=1, num_epochs = 5, best_model_path = None):
         self.train_data_loader = train_data_loader
         self.valid_data_loader = valid_data_loader
         self.device = device
@@ -33,6 +34,7 @@ class EstimatorTrainer:
         # self.criterion = EstimatorLoss().to(device)
         self.sequence_length = train_data_loader.N
         self.criterion = torch.nn.MSELoss().to(device)
+        self.output_path = output_path
 
     # def create_batch(self, data_loader, batch_size=1):
     #     sequence = np.zeros((batch_size,self.train_data_loader.N))
@@ -93,10 +95,13 @@ class EstimatorTrainer:
             self.best_loss = valid_loss
             torch.save(self.model.state_dict(), os.path.join(self.best_model_path, "best_estimator_weights.pth"))
         print(f"Validation Loss: {valid_loss}")
+        return valid_loss
         
 
 
     def train(self):
+        train_loss_log = []
+        valid_loss_log = []
         for epoch in range(self.num_epochs):
             self.model.train()
             train_loss = 0
@@ -122,13 +127,29 @@ class EstimatorTrainer:
                 print(f"Epoch progress: {progress[0]}/{progress[1]}", end="\r")
             after_train = time.time()
             print(f"Epoch: {epoch}, Loss: {train_loss / train_count * 60}")
-            self.validate()
+            train_loss_log.append(train_loss / train_count * 60)
+            valid_loss = self.validate()
+            valid_loss_log.append(valid_loss)
             after_valid = time.time()
             self.train_data_loader.reset()
             self.valid_data_loader.reset()
             if DEBUG:
                 print("Train time:", after_train - epoch_start)
                 print("Valid time:", after_valid - after_train)
+        # plot training loss
+        plt.plot(train_loss_log)
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Training loss - Estimator")
+        plt.savefig(os.path.join(self.output_path, "estimator_train_loss.png"))
+        plt.clf()
+        # plot validation loss
+        plt.plot(valid_loss_log)
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Validation loss - Estimator")
+        plt.savefig(os.path.join(self.output_path, "estimator_valid_loss.png"))
+        plt.close()
 
     def save_model(self, path):
         torch.save(self.model.state_dict(), path)
@@ -201,7 +222,7 @@ if __name__ == "__main__":
     extractor_model = Extractor()
     extractor_model.load_state_dict(torch.load(extractor_weights_path))
 
-    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, extractor_model, batch_size=batch_size, num_epochs=num_epochs, lr=lr, best_model_path=weights_path)
+    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, extractor_model, output_path=output_path, batch_size=batch_size, num_epochs=num_epochs, lr=lr, best_model_path=weights_path)
     trainer.train()
     weights_path = os.path.join("output","estimator_weights","weights_latest.pth")
     trainer.save_model(weights_path)
