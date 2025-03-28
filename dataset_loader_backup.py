@@ -16,7 +16,7 @@ class DatasetLoader:
             self.videos = videos
         self.N = N
         self.step_size = step_size
-        self.new_video = False
+        self.last_sequence_loaded = False
         self.augmentation = augmentation
         self.flip = True
 
@@ -36,83 +36,47 @@ class DatasetLoader:
         Load the next frames according to the step_size
         return: frame
         '''
-        self.new_video = False
         self.current_N_sequence += 1
-        if self.current_image + self.step_size + self.N <= self.current_video_frames_count:
-            # if whole sequence can be loaded
-            frames_to_load = np.arange(self.current_image + self.step_size, self.current_image + self.N + self.step_size)
-            # find out if any of the frames are already loaded
-            # common_frames = np.intersect1d(frames_to_load, self.loaded_frames)
-            if self.N > self.step_size:
-                common_frames_length = self.N - self.step_size
-            else:
-                common_frames_length = 0
-            # print("common frames", common_frames)
-            # print("common frames", common_frames)
-            if common_frames_length > 0:
-                # if some of the frames are already loaded keep the last common_frames_length frames
-                self.frames = np.roll(self.frames,-common_frames_length, axis=0)
-                frames_to_load = frames_to_load[common_frames_length:]
-        
-            # load the next hr data
-            indexes_to_load = np.arange(self.current_image + self.step_size, self.current_image + self.step_size + self.N)
-            self.current_hr_data = self.hr_data[indexes_to_load]
-        
+        frames_to_load = [i for i in range(self.current_image + self.N, self.current_image + self.N + self.step_size)]
+        if frames_to_load[-1] < self.current_video_frames_count:
+            for frame_id in frames_to_load:
+                frame = cv2.imread(os.path.join(self.dataset_path, self.current_video, str(frame_id) + ".png"))
+                if self.augmentation:
+                    # rotate the image
+                    M = cv2.getRotationMatrix2D((frame.shape[1]//2, frame.shape[0]//2), np.radians(self.augmentation_angle), 1)
+                    frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+                    # add random shade
+                    frame = np.clip(frame + self.augmentation_color, 0, 255)
+                    # flip the image
+                    if random.choice([True, False]):
+                        frame = cv2.flip(frame, 1)
+                    if DEBUG:
+                        # convert frame to a supported depth
+                        frame_to_show = frame.astype(np.uint8)
+                        # show the frame
+                        print("frame shape", frame_to_show.shape)
+                        cv2.imshow("frame", frame_to_show)
+                        cv2.waitKey(0)
+                    # translate the image randomly
+                    translation = 10
+                    M = np.float32([[1,0,random.randint(-translation, translation)],[0,1,random.randint(-translation, translation)]])
+                    frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+                self.frames = np.roll(self.frames, -1, axis=0)
+                self.frames[-1:] = frame
+                self.current_image += 1
 
-        elif self.current_image + self.step_size < self.current_video_frames_count:
-            # if the last sequence can be loaded ( but not fully) load just the rest of the frames
-            frames_to_load = np.arange(self.current_image + self.step_size, self.current_video_frames_count)
-
-            if self.N > self.step_size:
-                common_frames_length = self.N - self.step_size
-            else:
-                common_frames_length = 0
-            # print("common frames", common_frames)
-            # print("common frames", common_frames)
-            if common_frames_length > 0:
-                # if some of the frames are already loaded keep the last common_frames_length frames
-                self.frames = np.roll(self.frames,-common_frames_length, axis=0)
-                frames_to_load = frames_to_load[common_frames_length:]
-
-            # load the next hr data
-            indexes_to_load = np.arange(self.current_image + self.step_size, self.current_video_frames_count)
-            self.current_hr_data = self.hr_data[indexes_to_load]
+                # delete first hr data in current hr data
+                self.current_hr_data = np.roll(self.current_hr_data, -1)
+                # load new hr data
+                self.current_hr_data[-1] = int(self.hr_data.readline())
+            return True
         else:
             # load the next video
             self.current_video_idx += 1
             if self.current_video_idx >= len(self.videos):
                 return False
-            return self.load_next_video()
-        
-        # load the rest of the frames frames
-        for frame_id in frames_to_load:
-            frame = cv2.imread(os.path.join(self.dataset_path, self.current_video, str(frame_id) + ".png"))
-            if self.augmentation:
-                # rotate the image
-                M = cv2.getRotationMatrix2D((frame.shape[1]//2, frame.shape[0]//2), np.radians(self.augmentation_angle), 1)
-                frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
-                # add random shade
-                frame = np.clip(frame + self.augmentation_color, 0, 255)
-                # flip the image
-                if random.choice([True, False]):
-                    frame = cv2.flip(frame, 1)
-                if DEBUG:
-                    # convert frame to a supported depth
-                    frame_to_show = frame.astype(np.uint8)
-                    # show the frame
-                    cv2.imshow("frame", frame_to_show)
-                    cv2.waitKey(0)
-                # translate the image randomly
-                translation = 10
-                M = np.float32([[1,0,random.randint(-translation, translation)],[0,1,random.randint(-translation, translation)]])
-                frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
-            self.frames = np.roll(self.frames, -1, axis=0)
-            self.frames[-1:] = frame
-        self.current_image += self.step_size
-        self.loaded_frames = np.concatenate((self.loaded_frames[self.step_size:], frames_to_load))
-
-    
-        return len(frames_to_load)
+            self.load_next_video()
+            return True
     
 
 
@@ -120,7 +84,6 @@ class DatasetLoader:
         '''
         Load the next video and initialize frames and hr data
         '''
-        self.new_video = True
         if self.augmentation:
             self.set_augmentation()
         self.current_video = self.videos[self.current_video_idx]
@@ -135,7 +98,6 @@ class DatasetLoader:
         self.current_hr_data = self.hr_data[:self.N]
 
         # load first N frames
-        self.loaded_frames = np.arange(self.N)
         for i in range(self.N):
             frame = cv2.imread(os.path.join(self.dataset_path, self.current_video, str(i) + ".png"))
             if self.augmentation:
@@ -155,7 +117,6 @@ class DatasetLoader:
                     cv2.imshow("frame", frame_to_show)
                     cv2.waitKey(0)
             self.frames[i] = frame
-        return self.N
 
     def set_augmentation(self):
         # generate agumentation parameters
@@ -225,38 +186,5 @@ class DatasetLoader:
         return: float
         '''
         return [self.current_N_sequence , self.N_sequences]
-
-
-
-
-
-if __name__ == "__main__":
-    dataset_path = "datasets/dataset_synthetic"
-    videos = ["video_1", "video_2"]
-    import time
-    start = time.time()
-
-
-    dataset_loader = DatasetLoader(dataset_path, videos, N=300, step_size=300,augmentation=True)
-
-    for i in range(1000):
-        sequence = dataset_loader.get_sequence()
-        hr = dataset_loader.get_hr()
-        hr_list = dataset_loader.get_hr_list()
-        dataset_done = not  dataset_loader.next_sequence()
-        if dataset_done:
-            print("dataset done:", i)
-            break
-    dataset_loader.reset()
-    for i in range(1000):
-        sequence = dataset_loader.get_sequence()
-        hr = dataset_loader.get_hr()
-        hr_list = dataset_loader.get_hr_list()
-        dataset_done = not  dataset_loader.next_sequence()
-        if dataset_done:
-            print("dataset done 2nd time:", i)
-            break
-    print("Time:", time.time() - start)
-
 
 

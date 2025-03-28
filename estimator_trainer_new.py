@@ -31,24 +31,16 @@ class EstimatorTrainer:
         #     param.requires_grad = False
         self.model.to(device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-        # self.criterion = EstimatorLoss().to(device)
+        self.criterion = EstimatorLoss().to(device)
         self.sequence_length = train_data_loader.N
-        self.criterion = torch.nn.MSELoss().to(device)
+        # self.criterion = torch.nn.MSELoss().to(device)
         self.output_path = output_path
 
-    # def create_batch(self, data_loader, batch_size=1):
-    #     sequence = np.zeros((batch_size,self.train_data_loader.N))
-    #     hr_data = np.zeros((batch_size))
-    #     epoch_done = False
-    #     for i in range(batch_size):
-    #         seq = data_loader.get_sequence()
-    #         hr = data_loader.get_hr()
-    #         sequence[i] = seq
-    #         hr_data[i] = hr/60
-    #         epoch_done = not data_loader.next_sequence()
-    #         progress = data_loader.get_progress()
-    #         # print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
-    #     return sequence, hr_data, epoch_done, progress
+    def infer_extractor(self, sequence):
+        with torch.no_grad():
+            x = torch.tensor(sequence.reshape(self.N, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
+            output = self.extractor_model(x).reshape(self.N).cpu().numpy()
+        return output
 
     def create_batch(self, data_loader, batch_size=1):
         batch_output = np.zeros((batch_size, self.sequence_length))

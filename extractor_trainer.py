@@ -247,7 +247,7 @@ if __name__ == "__main__":
     import yaml
 
     import csv
-    config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_pure_test.yaml"))
     data = config_data["data"]
     config_data = config_data["extractor"]
     optimizer = config_data["optimizer"]
