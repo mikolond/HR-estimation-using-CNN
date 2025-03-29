@@ -177,6 +177,7 @@ class ExtractorTrainer:
         deltas = np.zeros((self.batch_size))
         n_of_sequences = 0
         next_seq_out = None
+        epoch_done = False
         for j in range(self.batch_size):
             cur_seq = data_loader.get_sequence()
             sequence[j] = cur_seq
