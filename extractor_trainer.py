@@ -176,7 +176,7 @@ class ExtractorTrainer:
         fs = np.zeros((self.batch_size))
         deltas = np.zeros((self.batch_size))
         n_of_sequences = 0
-        epoch_done = False
+        next_seq_out = None
         for j in range(self.batch_size):
             cur_seq = data_loader.get_sequence()
             sequence[j] = cur_seq
@@ -184,12 +184,14 @@ class ExtractorTrainer:
             deltas[j] = self.get_delta_from_hr_list(hr_list)
             f_true[j] = data_loader.get_hr() / 60
             fs[j] = data_loader.get_fps()
-            epoch_done = not data_loader.next_sequence()
+            next_seq_out = data_loader.next_sequence()
             n_of_sequences = j + 1
-            if epoch_done and j < self.batch_size:
+            if next_seq_out is None and j < self.batch_size:
                 if self.debug:
                     print("epoch done, but batch not full")
                 break
+        if next_seq_out is None:
+            epoch_done = True
         return sequence[:n_of_sequences], f_true[:n_of_sequences], fs[:n_of_sequences], n_of_sequences, epoch_done, deltas
 
     def log_progress(self, loss, start_time):
@@ -247,7 +249,7 @@ if __name__ == "__main__":
     import yaml
 
     import csv
-    config_data = yaml.safe_load(open("config_files/config_pure_test.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_pure_test_halmos.yaml"))
     data = config_data["data"]
     config_data = config_data["extractor"]
     optimizer = config_data["optimizer"]

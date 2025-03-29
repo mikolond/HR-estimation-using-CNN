@@ -81,7 +81,7 @@ class DatasetLoader:
             # load the next video
             self.current_video_idx += 1
             if self.current_video_idx >= len(self.videos):
-                return False
+                return None
             return self.load_next_video()
         
         # load the rest of the frames frames
@@ -172,10 +172,12 @@ class DatasetLoader:
         if augmentation is enabled, the frames will be augmented (random color added and rotated by a small angle)
         '''
 
-        self.N_sequences = 0
+        self.N_sequences = 1
         for video in self.videos:
             images_count = len(os.listdir(os.path.join(self.dataset_path, video))) - 2
             self.N_sequences += (images_count - self.N) // self.step_size + 1
+            if (images_count - self.N) // self.step_size != 0:
+                self.N_sequences += 1  
         
         # shuffle the videos
         self.current_video_idx = 0
@@ -237,26 +239,17 @@ if __name__ == "__main__":
     start = time.time()
 
 
-    dataset_loader = DatasetLoader(dataset_path, videos, N=300, step_size=300,augmentation=True)
+    dataset_loader = DatasetLoader(dataset_path, videos, N=300, step_size=100,augmentation=True)
 
-    for i in range(1000):
+    while True:
         sequence = dataset_loader.get_sequence()
         hr = dataset_loader.get_hr()
         hr_list = dataset_loader.get_hr_list()
-        dataset_done = not  dataset_loader.next_sequence()
-        if dataset_done:
-            print("dataset done:", i)
+        progress = dataset_loader.get_progress()
+        print("progress", progress)
+        dataset_done = dataset_loader.next_sequence()
+        print("dataset_done", dataset_done)
+        if dataset_done is None:
             break
     dataset_loader.reset()
-    for i in range(1000):
-        sequence = dataset_loader.get_sequence()
-        hr = dataset_loader.get_hr()
-        hr_list = dataset_loader.get_hr_list()
-        dataset_done = not  dataset_loader.next_sequence()
-        if dataset_done:
-            print("dataset done 2nd time:", i)
-            break
-    print("Time:", time.time() - start)
-
-
 
