@@ -39,7 +39,6 @@ class DatasetLoader:
         self.new_video = False
         self.current_N_sequence += 1
         if self.current_image + self.step_size + self.N <= self.current_video_frames_count:
-            print("Loading normal sequence")
             # if whole sequence can be loaded
             frames_to_load = np.arange(self.current_image + self.step_size, self.current_image + self.N + self.step_size)
             # find out if any of the frames are already loaded
@@ -61,7 +60,6 @@ class DatasetLoader:
         
 
         elif self.current_image + self.step_size < self.current_video_frames_count:
-            print("Loading last sequence")
             # if the last sequence can be loaded ( but not fully) load just the rest of the frames
             frames_to_load = np.arange(self.current_image + self.step_size, self.current_video_frames_count)
 
@@ -80,9 +78,8 @@ class DatasetLoader:
             indexes_to_load = np.arange(self.current_image + self.step_size, self.current_video_frames_count)
             self.current_hr_data = self.hr_data[indexes_to_load]
             self.current_image = self.current_video_frames_count
-            
+
         else:
-            print("Loading next video")
             # load the next video
             self.current_video_idx += 1
             if self.current_video_idx >= len(self.videos):
@@ -178,7 +175,7 @@ class DatasetLoader:
         if augmentation is enabled, the frames will be augmented (random color added and rotated by a small angle)
         '''
 
-        self.N_sequences = 1
+        self.N_sequences = 0
         for video in self.videos:
             images_count = len(os.listdir(os.path.join(self.dataset_path, video))) - 2
             self.N_sequences += (images_count - self.N) // self.step_size + 1
