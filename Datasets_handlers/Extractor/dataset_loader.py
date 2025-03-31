@@ -39,6 +39,7 @@ class DatasetLoader:
         self.new_video = False
         self.current_N_sequence += 1
         if self.current_image + self.step_size + self.N <= self.current_video_frames_count:
+            print("Loading normal sequence")
             # if whole sequence can be loaded
             frames_to_load = np.arange(self.current_image + self.step_size, self.current_image + self.N + self.step_size)
             # find out if any of the frames are already loaded
@@ -60,6 +61,7 @@ class DatasetLoader:
         
 
         elif self.current_image + self.step_size < self.current_video_frames_count:
+            print("Loading last sequence")
             # if the last sequence can be loaded ( but not fully) load just the rest of the frames
             frames_to_load = np.arange(self.current_image + self.step_size, self.current_video_frames_count)
 
@@ -77,7 +79,10 @@ class DatasetLoader:
             # load the next hr data
             indexes_to_load = np.arange(self.current_image + self.step_size, self.current_video_frames_count)
             self.current_hr_data = self.hr_data[indexes_to_load]
+            self.current_image = self.current_video_frames_count
+            
         else:
+            print("Loading next video")
             # load the next video
             self.current_video_idx += 1
             if self.current_video_idx >= len(self.videos):
@@ -120,6 +125,7 @@ class DatasetLoader:
         '''
         Load the next video and initialize frames and hr data
         '''
+        print("Loading video:", self.videos[self.current_video_idx])
         self.new_video = True
         if self.augmentation:
             self.set_augmentation()
@@ -234,7 +240,7 @@ class DatasetLoader:
 
 if __name__ == "__main__":
     dataset_path = "datasets/dataset_synthetic"
-    videos = ["video_1", "video_2"]
+    videos = ["video_1", "video_2","video_3"]
     import time
     start = time.time()
 
@@ -243,12 +249,13 @@ if __name__ == "__main__":
 
     while True:
         sequence = dataset_loader.get_sequence()
+        print("sequence shape:", sequence.shape)
         hr = dataset_loader.get_hr()
         hr_list = dataset_loader.get_hr_list()
         progress = dataset_loader.get_progress()
         print("progress", progress)
         dataset_done = dataset_loader.next_sequence()
-        print("dataset_done", dataset_done)
+        # print("dataset_done", dataset_done)
         if dataset_done is None:
             break
     dataset_loader.reset()

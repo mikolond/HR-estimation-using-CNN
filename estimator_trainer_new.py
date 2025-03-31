@@ -54,7 +54,7 @@ class EstimatorTrainer:
         for i in range(batch_size):
             sequence = data_loader.get_sequence()
             f_true = data_loader.get_hr() / 60
-            next_seq_out = not data_loader.next_sequence()
+            next_seq_out = data_loader.next_sequence()
             progress = data_loader.get_progress()
             
             with torch.no_grad():
