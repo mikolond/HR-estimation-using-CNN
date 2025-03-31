@@ -46,11 +46,12 @@ class EstimatorTrainer:
         batch_output = np.zeros((batch_size, self.sequence_length))
         f_true_out = np.zeros((batch_size))
         n_of_sequences = 0
+        next_seq_out = None
 
         for i in range(batch_size):
             sequence = data_loader.get_sequence()
             f_true = data_loader.get_hr() / 60
-            epoch_done = not data_loader.next_sequence()
+            next_seq_out = not data_loader.next_sequence()
             progress = data_loader.get_progress()
             
             with torch.no_grad():
@@ -60,8 +61,12 @@ class EstimatorTrainer:
             batch_output[i] = output
             f_true_out[i] = f_true
             n_of_sequences = i + 1
-            if epoch_done and i < batch_size - 1:
+            if next_seq_out is None and j < self.batch_size:
+                if self.debug:
+                    print("epoch done, but batch not full")
                 break
+        if next_seq_out is None:
+            epoch_done = True
             # print(f"Batch crating : {i}/{self.batch_size}", end="\r")
 
         return batch_output[:n_of_sequences], f_true_out[:n_of_sequences], epoch_done, progress

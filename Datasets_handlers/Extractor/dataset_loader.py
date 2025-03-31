@@ -176,7 +176,7 @@ class DatasetLoader:
         for video in self.videos:
             images_count = len(os.listdir(os.path.join(self.dataset_path, video))) - 2
             self.N_sequences += (images_count - self.N) // self.step_size + 1
-            if (images_count - self.N) // self.step_size != 0:
+            if (images_count - self.N) % self.step_size != 0:
                 self.N_sequences += 1  
         
         # shuffle the videos
