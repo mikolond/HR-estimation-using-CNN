@@ -70,6 +70,8 @@ class EstimatorTrainer:
                 break
         if next_seq_out is None:
             epoch_done = True
+        else:
+            epoch_done = False
             # print(f"Batch crating : {i}/{self.batch_size}", end="\r")
 
         return batch_output[:n_of_sequences], f_true_out[:n_of_sequences], epoch_done, progress
