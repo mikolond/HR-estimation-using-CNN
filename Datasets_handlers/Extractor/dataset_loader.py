@@ -122,7 +122,6 @@ class DatasetLoader:
         '''
         Load the next video and initialize frames and hr data
         '''
-        print("Loading video:", self.videos[self.current_video_idx])
         self.new_video = True
         if self.augmentation:
             self.set_augmentation()
