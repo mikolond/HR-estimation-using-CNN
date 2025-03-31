@@ -64,10 +64,6 @@ class EstimatorTrainer:
             batch_output[i] = output
             f_true_out[i] = f_true
             n_of_sequences = i + 1
-            if next_seq_out is None and j < self.batch_size:
-                if self.debug:
-                    print("epoch done, but batch not full")
-                break
         if next_seq_out is None:
             epoch_done = True
         else:
