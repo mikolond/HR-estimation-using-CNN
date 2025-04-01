@@ -37,7 +37,6 @@ class DatasetLoader:
         return: frame
         '''
         self.current_N_sequence += 1
-        sequence = np.array([])
         if self.current_image + self.step_size + self.N <= self.current_video_frames_count:
             # if whole sequence can be loaded
             frames_to_load = np.arange(self.current_image + self.step_size, self.current_image + self.N + self.step_size)

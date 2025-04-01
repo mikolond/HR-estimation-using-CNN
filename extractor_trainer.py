@@ -22,7 +22,7 @@ class ExtractorTrainer:
         self.decay_rate = decay_rate
         self.decay_epochs = decay_epochs
         self.cum_batch_size = cum_batch_size
-        self.sequence_length = N
+        self.training_sequence_length = N
         self.train_data_loader = train_data_loader
         self.valid_data_loader = valid_data_loader
         self.device = device
@@ -71,7 +71,7 @@ class ExtractorTrainer:
     def train(self):
         # path_to_save = os.path.join(self.weights_path, "model_epoch_-1.pth")
         # torch.save(self.model.state_dict(), path_to_save)
-        print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "cumulative batch size:", self.cum_batch_size,"lr decay:", self.lr_decay, "decay rate:", self.decay_rate, "decay epchs:", self.decay_rate, "N:", self.sequence_length, "delta:", self.hr_data["delta"], self.hr_data["f_range"], self.hr_data["sampling_f"])
+        print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "cumulative batch size:", self.cum_batch_size,"lr decay:", self.lr_decay, "decay rate:", self.decay_rate, "decay epchs:", self.decay_rate, "N:", self.training_sequence_length, "delta:", self.hr_data["delta"], self.hr_data["f_range"], self.hr_data["sampling_f"])
         #  create another folder for model weights
         best_valid_loss = float("inf")
         epochs_without_improvement = 0
@@ -88,12 +88,12 @@ class ExtractorTrainer:
                 sequence, f_true, fs, n_of_sequences, epoch_done, deltas = self.create_batch(self.train_data_loader)
                 if n_of_sequences != 0:
                     before_x = time.time()
-                    x = torch.tensor(sequence.reshape(n_of_sequences * self.sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
+                    x = torch.tensor(sequence.reshape(n_of_sequences * self.training_sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
                     if self.debug:
                         print("shape of x", x.shape)
                     f_true = torch.tensor(f_true).float().to(self.device)
                     before_infer = time.time()
-                    output = self.model(x).reshape(n_of_sequences, self.sequence_length)
+                    output = self.model(x).reshape(n_of_sequences, self.training_sequence_length)
                     if self.debug:
                         print("output shape", output.shape)
                     before_loss = time.time()
@@ -171,7 +171,8 @@ class ExtractorTrainer:
 
 
     def create_batch(self, data_loader=None):
-        sequence = np.zeros((self.batch_size, self.sequence_length, 192, 128, 3))
+        sequence_length = data_loader.N
+        sequence = np.zeros((self.batch_size, sequence_length, 192, 128, 3))
         f_true = np.zeros((self.batch_size))
         fs = np.zeros((self.batch_size))
         deltas = np.zeros((self.batch_size))
@@ -217,6 +218,7 @@ class ExtractorTrainer:
         self.model.eval()
         with torch.no_grad():
             self.valid_data_loader.reset()
+            sequence_length = self.valid_data_loader.N
             valid_loss = 0
             valid_count = 0
             validation_done = False
@@ -224,11 +226,11 @@ class ExtractorTrainer:
                 sequence, f_true, fs, n_of_sequences, validation_done, deltas = self.create_batch(self.valid_data_loader)
                 if n_of_sequences == 0:
                     break
-                x = torch.tensor(sequence.reshape(n_of_sequences * self.sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
+                x = torch.tensor(sequence.reshape(n_of_sequences * sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
                 if self.debug:
                     print("shape of x", x.shape)
                 f_true = torch.tensor(f_true).float().to(self.device)
-                output = self.model(x).reshape(n_of_sequences, self.sequence_length)
+                output = self.model(x).reshape(n_of_sequences, sequence_length)
                 f_range = self.hr_data["f_range"]
                 sampling_f = self.hr_data["sampling_f"]
                 valid_loss += self.loss_fc(output, f_true, fs, deltas, sampling_f, f_range)
@@ -250,7 +252,7 @@ if __name__ == "__main__":
     import yaml
 
     import csv
-    config_data = yaml.safe_load(open("config_files/config_pure_test_halmos.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
     data = config_data["data"]
     config_data = config_data["extractor"]
     optimizer = config_data["optimizer"]
