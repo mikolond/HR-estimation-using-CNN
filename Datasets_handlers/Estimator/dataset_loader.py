@@ -92,7 +92,7 @@ class EstimatorDatasetLoader:
             return True
         
     def get_sequence(self):
-        return self.current_N_sequence, np.mean(self.current_hr_data)
+        return self.current_N_sequence, np.median(self.current_hr_data)
     
     def get_progress(self):
         return self.current_video_index, len(self.videos)

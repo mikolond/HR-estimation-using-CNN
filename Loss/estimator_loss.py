@@ -9,4 +9,4 @@ class EstimatorLoss(nn.Module):
 
     def forward(self,x,y):
         # simple l2 loss
-        return torch.sum(torch.abs(x-y))/len(x)
+        return torch.mean(torch.abs(x-y))

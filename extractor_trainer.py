@@ -32,13 +32,12 @@ class ExtractorTrainer:
         self.debug = debug
         self.model = Extractor().to(self.device)
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.05)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.7)
         self.validation_loss_log = []
         self.current_epoch = 0
         self.current_epoch_time = 0
         self.last_epoch_time = 0
-        self.train_log_counter = 0
 
         self.weights_path = weights_path
         if not os.path.exists(self.weights_path):
@@ -103,10 +102,9 @@ class ExtractorTrainer:
                     loss = self.loss_fc(output, f_true, fs, deltas, sampling_f, f_range)
                     train_loss += loss.item()
                     self.log_progress(loss.item(), start_time)
-                    self.train_log_counter += 1
                     before_backward = time.time()
                     loss.backward()
-                    if train_counter % self.cum_batch_size == 0:
+                    if train_counter % self.cum_batch_size == 0 or epoch_done:
                         for param in self.model.parameters():
                             if param.grad is not None:
                                 param.grad.data /= self.cum_batch_size
@@ -167,6 +165,12 @@ class ExtractorTrainer:
         plt.title("Validation loss - Extractor")
         plt.savefig(os.path.join(self.output_path, "extractor_valid_loss.png"))
         plt.close()
+
+        with open(os.path.join(self.output_path, "train_loss.csv"), mode='w', newline='') as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(['epoch', 'train_loss', 'valid_loss'])
+            for i in range(len(train_loss_log)):
+                csv_writer.writerow([i, train_loss_log[i], self.validation_loss_log[i]])
 
 
 
@@ -252,7 +256,7 @@ if __name__ == "__main__":
     import yaml
 
     import csv
-    config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_pure_decreasing.yaml"))
     data = config_data["data"]
     config_data = config_data["extractor"]
     optimizer = config_data["optimizer"]

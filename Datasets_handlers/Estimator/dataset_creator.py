@@ -6,6 +6,7 @@ import os
 import csv
 
 
+
 def process_video(model, extractor_dataset_path, video, estimator_dataset_path, N):
     # create dataset_loader just for the 1 video
     # reate csv file in estimator_dataset_path with the same name as the video
@@ -43,12 +44,14 @@ if __name__ == "__main__":
     dataset_path = os.path.join("datasets", "dataset_ecg_fitness")
     N = 600
     videos_list = os.listdir(dataset_path)
-    # keep only the names that contains "video"
-    videos_list = [video for video in videos_list if "video" in video]
+    # delete data.csv file from video_list
+    for video in videos_list:
+        if video.endswith(".csv"):
+            videos_list.remove(video)
 
 
     # load extractor model
-    weights_path = os.path.join("output","weights","model_epoch_35.pth")
+    weights_path = os.path.join("output","weights","pure_decreasing", "best_extractor_weights.pth")
     device_id = input("Enter the device number: ")
     if torch.cuda.is_available():
         device = torch.device("cuda:" + device_id)
@@ -62,7 +65,7 @@ if __name__ == "__main__":
     extractor.load_state_dict(torch.load(weights_path, map_location=device))
 
     # estimaotr dataset path
-    estimator_dataset_path = os.path.join("datasets", "estimator_ecg_fitness_epoch_35")
+    estimator_dataset_path = os.path.join("datasets", "estimator_ecg_pure_extractor")
 
     for video in videos_list:
         print("Processing video " + video)

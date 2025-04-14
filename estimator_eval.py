@@ -2,11 +2,38 @@ import torch
 from Models.estimator_model import Estimator
 from Models.extractor_model import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
+from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 import time
 plot_counter = 0
+
+def get_statistics(data_loader):
+    '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
+    statistics = {}
+    hr_data = np.array([])
+    dataset_done = False
+    while not dataset_done:
+        real_hr = data_loader.get_hr_list()
+
+        next_out = data_loader.next_sequence()
+        if next_out is None:
+            dataset_done = True
+        else:
+            real_hr = real_hr[len(real_hr)-next_out:]
+        hr_data = np.append(hr_data, real_hr)
+        progress = data_loader.get_progress()
+        print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
+
+    hr_data = np.array(hr_data)
+    average = np.mean(hr_data)
+    std_deviation = np.std(hr_data)
+    mean_deviation = np.mean(np.abs(hr_data - average))
+    statistics["mean_deviation"] = mean_deviation
+    statistics["average"] = average
+    statistics["std_deviation"] = std_deviation
+    return statistics
 
 class EstimatorEval:
     def __init__(self, extractor_model, extractor_weights_path, estimator_weights_path, device, N):
@@ -27,24 +54,12 @@ class EstimatorEval:
         output = self.model(x)
         return output.item()
     
-    def get_average_deviation(self, data_loader):
-        '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
-        hr_data = np.array([])
-        dataset_done = False
-        while not dataset_done:
-            _, real_hr = data_loader.get_sequence()
-            hr_data = np.append(hr_data, real_hr)
-            dataset_done = not data_loader.next_sequence()
-        average_hr = np.mean(hr_data)
-        average_deviation = np.mean(np.abs(hr_data - average_hr))
-        return average_deviation
+
     
-    def evaluate(self, trn_loader, val_loader):
+    def evaluate(self, data_loader, tag = "unknown"):
         loss = {}
-        print("evaluation training loss")
-        loss["trn_rmse"], loss["trn_mae"] = self.validate(trn_loader)
-        print("evaluation validation loss")
-        loss["val_rmse"], loss["val_mae"] = self.validate(val_loader)
+        # print("evaluating dataset")
+        loss["rmse"], loss["mae"], loss["pearson"] = self.validate(data_loader, tag)
         return loss
     
     def infer_extractor(self, sequence):
@@ -53,28 +68,40 @@ class EstimatorEval:
             output = self.extractor_model(x).reshape(self.N).cpu().numpy()
         return output
     
-    def validate(self, data_loader):
+    def make_predictions(self, data_loader):
         self.model.eval()
-        errors = []
+        ground_truth = []
+        predicted = []
+        data_loader.reset()
         epoch_done = False
         with torch.no_grad():
             while not epoch_done:
                 sequence = data_loader.get_sequence()
                 hr_data = data_loader.get_hr()
+
                 extractor_output = self.infer_extractor(sequence)
                 # print("extractor_output shape:",extractor_output.shape)
                 # print("extractor_output:",extractor_output)
-                predicted = self.infer(extractor_output) * 60
-
-                loss = predicted - hr_data
-                errors.append(loss)
+                prediction = self.infer(extractor_output) * 60
                 epoch_done = not data_loader.next_sequence()
-                # get max freq
-                get_max_freq_padded(extractor_output, 30, hr_data/60, predicted/60, pad_factor=10)
-        errors = np.array(errors)
+                ground_truth.append(hr_data)
+                predicted.append(prediction)
+                progress = data_loader.get_progress()
+                print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
+
+        return ground_truth, predicted
+    
+    def validate(self, data_loader, tag):
+        ground_truth, predicted = self.make_predictions(data_loader)
+        plot_pearson(ground_truth, predicted, os.path.join("trash","pure_median"), tag)
+        errors = np.array(predicted) - np.array(ground_truth)
+        # computes the rmse
         rmse = np.sqrt(np.mean(errors**2))
+        # computes the mae
         mae = np.mean(np.abs(errors))
-        return rmse, mae
+        # computes the pearsion correlation
+        pearson = np.corrcoef(ground_truth, predicted)[0, 1]
+        return rmse, mae, pearson
         
     
 def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_factor
@@ -116,6 +143,29 @@ def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_f
 
     return max_freq
 
+def plot_pearson(ground_truth, predicted, save_path, tag):
+    plt.figure()
+    pearson = np.corrcoef(ground_truth, predicted)[0, 1]
+    minimum = min(min(ground_truth), min(predicted))
+    maximum = max(max(ground_truth), max(predicted))
+    plt.xlim(minimum, maximum)
+    plt.ylim(minimum, maximum)
+    plt.plot([minimum, maximum], [minimum, maximum], 'r--')
+    plt.xticks(np.arange(minimum, maximum, 5),rotation=45)
+    plt.yticks(np.arange(minimum, maximum, 5))
+    plt.grid()
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.scatter(ground_truth, predicted)
+    plt.title(f"{tag}-set, Pearson correlation R={pearson:.2f}")
+    plt.xlabel("Ground Truth bpm")
+    plt.ylabel("Predicted bpm")
+    namefile = "pearson_correlation_" + tag + ".png"
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    plt.savefig(os.path.join(save_path, namefile), bbox_inches='tight')
+    plt.clf()
+    plt.close()
+
 def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
     global plot_counter
     plt.figure()
@@ -144,7 +194,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_pure_test.yaml"))
     data = config_data["data"]
     config_data = config_data["estimator"]
     optimizer = config_data["optimizer"]
@@ -152,10 +202,12 @@ if __name__ == "__main__":
     valid = config_data["valid"]
     # load data
     weights_path = data["weights_dir"]
-    extractor_weights_path = os.path.join(weights_path, "best_extractor_weights.pth")
+    # extractor_weights_path = os.path.join(weights_path, "best_extractor_weights.pth")
+    extractor_weights_path = os.path.join("output", "weights", "pure_decreasing", "best_extractor_weights.pth")
     if not os.path.exists(extractor_weights_path):
         raise Exception("Extractor weights not found")
-    estimator_weights_path = os.path.join(weights_path, "best_estimator_weights.pth")
+    # estimator_weights_path = os.path.join(weights_path, "best_estimator_weights.pth")
+    estimator_weights_path = os.path.join("output", "estimator_pure_median", "best_model.pth")
     if not os.path.exists(estimator_weights_path):
         raise Exception("Estimator weights not found")
     benchmark_path = data["benchmark"]
@@ -170,26 +222,38 @@ if __name__ == "__main__":
     benchmark = yaml.safe_load(open(benchmark_path))
     train_folders = benchmark["trn"]
     valid_folders = benchmark["val"]
+    test_folders = benchmark["tst"]
     train_videos_list = np.array([])
     valid_videos_list = np.array([])
+    test_videos_list = np.array([])
 
     for idx in train_folders:
         train_videos_list = np.append(train_videos_list, np.array(folders[idx]))
     
     for idx in valid_folders:
         valid_videos_list = np.append(valid_videos_list, np.array(folders[idx]))
+    
+    for idx in test_folders:
+        test_videos_list = np.append(test_videos_list, np.array(folders[idx]))
 
+    seq_length = 300
     # create training data loader
     train_sequence_length = train["sequence_length"]
     train_shift = train["shift"]
     train_augment = train["augment"]
-    train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=train_sequence_length, step_size=train_shift, augmentation=train_augment)
+    train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=seq_length, step_size=seq_length, augmentation=False)
     
     # create validation data loader
     valid_sequence_length = valid["sequence_length"]
     valid_shift = valid["shift"]
     valid_augment = valid["augment"]
-    valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=valid_sequence_length, step_size=valid_shift, augmentation=valid_augment)
+    valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=seq_length, step_size=seq_length, augmentation=False)
+
+    # create test data loader
+    test_sequence_length = valid["sequence_length"]
+    test_shift = valid["shift"]
+    test_augment = valid["augment"]
+    test_data_loader = DatasetLoader(dataset_path, test_videos_list, N=seq_length, step_size=seq_length, augmentation=False)
 
 
     sequence_length = train["sequence_length"]
@@ -210,10 +274,32 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + device)
     # device = torch.device("cpu")
     extractor_model = Extractor()
-    extractor_model.load_state_dict(torch.load(extractor_weights_path))
+    extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
 
     evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, 300)
-    evaluator.evaluate(train_data_loader, valid_data_loader)
+    print("evaluating train data")
+    loss = evaluator.evaluate(train_data_loader, tag = "train")
+    print("train loss:", loss)
+    print("evaluating validation data")
+    loss = evaluator.evaluate(valid_data_loader, tag = "validation")
+    print("validation loss:", loss)
+    print("evaluating test data")
+    loss = evaluator.evaluate(test_data_loader, tag = "test")
+    print("test loss:", loss)
+
+    train_data_loader.reset()
+    valid_data_loader.reset()
+    test_data_loader.reset()
+
+    dataloader_statistics = get_statistics(train_data_loader)
+    print("train data loader statistics:", dataloader_statistics)
+    dataloader_statistics = get_statistics(valid_data_loader)
+    print("validation data loader statistics:", dataloader_statistics)
+    dataloader_statistics = get_statistics(test_data_loader)
+    print("test data loader statistics:", dataloader_statistics)
+    # average_val_deviation = evaluator.get_average_deviation(valid_data_loader)
+    # print("average training deviation:", average_trn_deviation)
+    # print("average validation deviation:", average_val_deviation)
     # weights_path = os.path.join("output","estimator_weights","best_model.pth")
 
     # import csv

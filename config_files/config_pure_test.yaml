@@ -39,7 +39,7 @@ estimator:
         lr_decay_epochs: [5, 15,15]
     train:
         sequence_length: 300
-        shift: 100
+        shift: 300
         augment: True
     valid:
         sequence_length: 300

@@ -13,7 +13,7 @@ DEBUG = False
 
 
 class EstimatorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, extractor_model,output_path = None, lr = 0.01, batch_size=1, num_epochs = 5, best_model_path = None):
+    def __init__(self, train_data_loader, valid_data_loader, device, extractor_model, patience=None, output_path = None, lr = 0.01, batch_size=1, num_epochs = 5, best_model_path = None):
         self.train_data_loader = train_data_loader
         self.valid_data_loader = valid_data_loader
         self.device = device
@@ -35,6 +35,9 @@ class EstimatorTrainer:
         self.sequence_length = train_data_loader.N
         # self.criterion = torch.nn.MSELoss().to(device)
         self.output_path = output_path
+        self.patience = patience
+        self.epochs_without_improvement = 0
+        self.early_stopping = False
 
     def infer_extractor(self, sequence):
         with torch.no_grad():
@@ -46,11 +49,12 @@ class EstimatorTrainer:
         batch_output = np.zeros((batch_size, self.sequence_length))
         f_true_out = np.zeros((batch_size))
         n_of_sequences = 0
+        next_seq_out = None
 
         for i in range(batch_size):
             sequence = data_loader.get_sequence()
             f_true = data_loader.get_hr() / 60
-            epoch_done = not data_loader.next_sequence()
+            next_seq_out = data_loader.next_sequence()
             progress = data_loader.get_progress()
             
             with torch.no_grad():
@@ -60,8 +64,10 @@ class EstimatorTrainer:
             batch_output[i] = output
             f_true_out[i] = f_true
             n_of_sequences = i + 1
-            if epoch_done and i < batch_size - 1:
-                break
+        if next_seq_out is None:
+            epoch_done = True
+        else:
+            epoch_done = False
             # print(f"Batch crating : {i}/{self.batch_size}", end="\r")
 
         return batch_output[:n_of_sequences], f_true_out[:n_of_sequences], epoch_done, progress
@@ -84,8 +90,14 @@ class EstimatorTrainer:
         self.model.train()
         valid_loss = valid_loss / valid_count * 60
         if valid_loss < self.best_loss:
+            self.epochs_without_improvement = 0
             self.best_loss = valid_loss
             torch.save(self.model.state_dict(), os.path.join(self.best_model_path, "best_estimator_weights.pth"))
+        else:
+            self.epochs_without_improvement += 1
+            if self.epochs_without_improvement >= self.patience:
+                print(f"Early stopping at epoch {self.num_epochs}")
+                self.early_stopping = True
         print(f"Validation Loss: {valid_loss}")
         return valid_loss
         
@@ -125,6 +137,9 @@ class EstimatorTrainer:
             after_valid = time.time()
             self.train_data_loader.reset()
             self.valid_data_loader.reset()
+            if self.early_stopping:
+                print("Early stopping")
+                break
             if DEBUG:
                 print("Train time:", after_train - epoch_start)
                 print("Valid time:", after_valid - after_train)
@@ -149,7 +164,7 @@ class EstimatorTrainer:
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_debug_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_pure_halmos_decreasing.yaml"))
     data = config_data["data"]
     config_data = config_data["estimator"]
     optimizer = config_data["optimizer"]
@@ -214,7 +229,7 @@ if __name__ == "__main__":
     extractor_model = Extractor()
     extractor_model.load_state_dict(torch.load(extractor_weights_path))
 
-    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, extractor_model, output_path=output_path, batch_size=batch_size, num_epochs=num_epochs, lr=lr, best_model_path=weights_path)
+    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, extractor_model, patience=patience, output_path=output_path, batch_size=batch_size, num_epochs=num_epochs, lr=lr, best_model_path=weights_path)
     trainer.train()
     weights_path = os.path.join("output","estimator_weights","weights_latest.pth")
     trainer.save_model(weights_path)

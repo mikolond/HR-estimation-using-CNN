@@ -254,8 +254,8 @@ if __name__ == "__main__":
         for row in reader:
             folders.append(row)
     benchmark = yaml.safe_load(open(benchmark_path))
-    train_folders = benchmark["val"]
-    valid_folders = benchmark["tst"]
+    train_folders = benchmark["trn"]
+    valid_folders = benchmark["val"]
     train_videos_list = np.array([])
     valid_videos_list = np.array([])
 

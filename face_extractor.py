@@ -18,10 +18,17 @@ class FaceExtractor:
         if len(detection_result) == 0 and self.previous_bb is None:
             return None
         elif len(detection_result) == 0 and self.previous_bb is not None:
-            bb = [self.previous_bb[0] + self.previous_bb_move_vector[0], self.previous_bb[1] + self.previous_bb_move_vector[1],
-                    self.previous_bb[2] + self.previous_bb_move_vector[0], self.previous_bb[3] + self.previous_bb_move_vector[1]].astype(int)
+            bb = np.array([self.previous_bb[0] + self.previous_bb_move_vector[0], self.previous_bb[1] + self.previous_bb_move_vector[1],
+                    self.previous_bb[2] + self.previous_bb_move_vector[0], self.previous_bb[3] + self.previous_bb_move_vector[1]]).astype(int)
+            print("no face detected, using previous bb")
+            print("bb:",bb)
+            bb_origin = [bb[0], bb[1]]
+            bb_width = bb[2] - bb[0]
+            bb_height = bb[3] - bb[1]
         else:
             bb = detection_result[0].bbox.astype(int)
+            print("face detected")
+            print("bb:",bb)
             bb_origin = [bb[0], bb[1]]
             bb_width = bb[2] - bb[0]
             bb_height = bb[3] - bb[1]
