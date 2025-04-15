@@ -1,5 +1,5 @@
 data:
-    benchmark: "benchmarks/benchmark_debug_synthetic.yaml"
+    benchmark: "benchmarks/benchmark_synthetic.yaml"
     dataset_dir: "datasets/dataset_synthetic/"
     output_dir: "output/synthetic_new/"
 

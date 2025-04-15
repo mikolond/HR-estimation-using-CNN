@@ -8,11 +8,11 @@ data:
 optimizer:
     batch_size: 400
     lr: 0.1
-    max_epochs: 300
-    patience: 150
+    max_epochs: 600
+    patience: 200
     decrease_lr: True
-    lr_decay: 0.2
-    lr_decay_epochs: [100, 200,300]
+    lr_decay: 0.6
+    lr_decay_epochs: [200,300]
 
 dataset_creator_N: 600
 dataset_creator_augmentation: False

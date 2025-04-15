@@ -10,7 +10,7 @@ optimizer:
     max_epochs: 600
     patience: 150
     decrease_lr: True
-    lr_decay: 0.3
+    lr_decay: 0.2
     lr_decay_epochs: [10, 100, 200, 300]
 
 hr_data:

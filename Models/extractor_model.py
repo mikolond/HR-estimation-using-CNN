@@ -79,6 +79,9 @@ class Extractor(nn.Module):
         x = self.conv3(x)
         x = self.conv4(x)
         x = self.conv5(x)
+        # normalize x from [min(x), max(x)] to [0,1]
+        x = x - x.min()
+        x = x / (x.max() - x.min())
         return x
 
     def init_weights(self):
