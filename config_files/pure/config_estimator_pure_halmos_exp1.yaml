@@ -1,7 +1,7 @@
 data:
     benchmark: "benchmarks/benchmark_pure.yaml"
     extractor_dataset_dir: "/mnt/data_personal/mikolond/datasets/pure_extractor_dataset"
-    extractor_weights: "output/pure_exp1/"
+    extractor_weights: "output/pure_exp1/best_extractor_weights.pth"
     estimator_dataset_dir: "/mnt/data_personal/mikolond/datasets/pure_estimator_dataset"
     output_dir: "output/pure_exp1/"
 
