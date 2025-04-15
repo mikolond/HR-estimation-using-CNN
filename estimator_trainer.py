@@ -92,7 +92,7 @@ class EstimatorTrainer:
         valid_loss = valid_loss/valid_count * 60
         if valid_loss < self.best_loss:
             self.best_loss = valid_loss
-            torch.save(self.model.state_dict(), os.path.join(self.best_model_path, "best_model.pth"))
+            torch.save(self.model.state_dict(), os.path.join(self.best_model_path, "best_estimator_weights.pth"))
             self.epochs_without_improvement = 0
         else:
             self.epochs_without_improvement += 1
@@ -166,7 +166,7 @@ class EstimatorTrainer:
         plt.close()
 
         # save the losses to csv file
-        with open(os.path.join(self.output_path, "train_loss.csv"), mode='w', newline='') as csv_file:
+        with open(os.path.join(self.output_path, "estimator_train_log.csv"), mode='w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file)
             csv_writer.writerow(['epoch', 'train_loss', 'valid_loss'])
             for i in range(len(train_loss_log)):
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     output_path = os.path.join("output", "estimator_pure_median")
     trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=600, num_epochs=1000, lr=0.01, best_model_path=output_path, output_path=output_path)
     trainer.set_patience(300)
-    trainer.set_lr_decay([100,200,300,400,500], 0.7)
+    trainer.set_lr_decay([100,200,300,400,500,600,700], 0.7)
     # trainer.load_model(os.path.join("output","estimator_pure_weights", "best_model.pth"))
     trainer.train()
     # weights_path = os.path.join("output","estimator_weights","weights_latest.pth")

@@ -5,9 +5,41 @@ import numpy as np
 import os
 import csv
 
+class DatasetCreator:
+    def __init__(self, weights_path, device, source_path, dest_path,N, augmentation=False):
+        self.model = Extractor().to(device)
+        if os.path.exists(weights_path):
+            self.model.load_state_dict(torch.load(weights_path, map_location=device))
+        self.model.eval()
+        self.dataset_path = source_path
+        self.estimator_dataset_path = dest_path
+        if not os.path.exists(self.estimator_dataset_path):
+            os.makedirs(self.estimator_dataset_path)
+        self.N = N
+        self.augmentation = augmentation
+        self.device = device
+    
+    def create_dataset(self):
+        videos_list = os.listdir(self.dataset_path)
+        # delete data.csv file from video_list
+        for video in videos_list:
+            if not os.path.isdir(os.path.join(self.dataset_path, video)):
+                videos_list.remove(video)
+
+        for video in videos_list:
+            print("Processing video " + video)
+            process_video(self.model, self.dataset_path, video, self.estimator_dataset_path, self.N, self.device)
+            print("Video " + video + " done")
+        
+        # copy data.csv from dataset_path to estimator_dataset_path
+        os.system(f"cp {os.path.join(self.dataset_path, 'data.csv')} {os.path.join(self.estimator_dataset_path, 'data.csv')}")
+        print("All videos done")
 
 
-def process_video(model, extractor_dataset_path, video, estimator_dataset_path, N):
+
+
+
+def process_video(model, extractor_dataset_path, video, estimator_dataset_path, N, device):
     # create dataset_loader just for the 1 video
     # reate csv file in estimator_dataset_path with the same name as the video
     # until video is not done
@@ -36,6 +68,8 @@ def process_video(model, extractor_dataset_path, video, estimator_dataset_path, 
                     csv_writer.writerow([i + N * sequence_count, extractor_output[i].item(), hr_data[i]])
                 sequence_count += 1
                 dataset_done = not dataset_loader.next_sequence()
+
+    
     
 
 
@@ -67,12 +101,15 @@ if __name__ == "__main__":
     # estimaotr dataset path
     estimator_dataset_path = os.path.join("datasets", "estimator_ecg_pure_extractor")
 
-    for video in videos_list:
-        print("Processing video " + video)
-        process_video(extractor, dataset_path, video, estimator_dataset_path, N)
-        print("Video " + video + " done")
+    dataset_creator = DatasetCreator(weights_path, device, dataset_path, estimator_dataset_path, N)
+    dataset_creator.create_dataset()
 
-    # copy data.csv from dataset_path to estimator_dataset_path
-    os.system(f"cp {os.path.join(dataset_path, 'data.csv')} {os.path.join(estimator_dataset_path, 'data.csv')}")
-    print("All videos done")
+    # for video in videos_list:
+    #     print("Processing video " + video)
+    #     process_video(extractor, dataset_path, video, estimator_dataset_path, N)
+    #     print("Video " + video + " done")
+
+    # # copy data.csv from dataset_path to estimator_dataset_path
+    # os.system(f"cp {os.path.join(dataset_path, 'data.csv')} {os.path.join(estimator_dataset_path, 'data.csv')}")
+    # print("All videos done")
 

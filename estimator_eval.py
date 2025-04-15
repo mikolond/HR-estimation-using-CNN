@@ -36,7 +36,10 @@ def get_statistics(data_loader):
     return statistics
 
 class EstimatorEval:
-    def __init__(self, extractor_model, extractor_weights_path, estimator_weights_path, device, N):
+    def __init__(self, extractor_model, extractor_weights_path, estimator_weights_path, device, N, output_path):
+        self.output_path = output_path
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
         self.model = Estimator().to(device)
         self.extractor_model = extractor_model.to(device)
         self.extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
@@ -93,7 +96,7 @@ class EstimatorEval:
     
     def validate(self, data_loader, tag):
         ground_truth, predicted = self.make_predictions(data_loader)
-        plot_pearson(ground_truth, predicted, os.path.join("trash","pure_median"), tag)
+        plot_pearson(ground_truth, predicted, os.path.join(self.output_path), tag)
         errors = np.array(predicted) - np.array(ground_truth)
         # computes the rmse
         rmse = np.sqrt(np.mean(errors**2))
@@ -194,22 +197,16 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_pure_test.yaml"))
+    config_data = yaml.safe_load(open("config_files/config_evaluation_synthetic.yaml"))
     data = config_data["data"]
-    config_data = config_data["estimator"]
-    optimizer = config_data["optimizer"]
-    train = config_data["train"]
-    valid = config_data["valid"]
-    # load data
-    weights_path = data["weights_dir"]
-    # extractor_weights_path = os.path.join(weights_path, "best_extractor_weights.pth")
-    extractor_weights_path = os.path.join("output", "weights", "pure_decreasing", "best_extractor_weights.pth")
+    weights = config_data["weights"]
+    extractor_weights_path = weights["extractor_weights"]
+    estimator_weights_path = weights["estimator_weights"]
     if not os.path.exists(extractor_weights_path):
-        raise Exception("Extractor weights not found")
-    # estimator_weights_path = os.path.join(weights_path, "best_estimator_weights.pth")
-    estimator_weights_path = os.path.join("output", "estimator_pure_median", "best_model.pth")
+        raise Exception("Extractor weights path does not exist")
     if not os.path.exists(estimator_weights_path):
-        raise Exception("Estimator weights not found")
+        raise Exception("Estimator weights path does not exist")
+    
     benchmark_path = data["benchmark"]
     dataset_path = data["dataset_dir"]
     output_path = data["output_dir"]
@@ -236,36 +233,18 @@ if __name__ == "__main__":
     for idx in test_folders:
         test_videos_list = np.append(test_videos_list, np.array(folders[idx]))
 
-    seq_length = 300
+    dataset_options = config_data["dataset_options"]
+    seq_length = dataset_options["sequence_length"]
+    step_size = dataset_options["shift"]
     # create training data loader
-    train_sequence_length = train["sequence_length"]
-    train_shift = train["shift"]
-    train_augment = train["augment"]
-    train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=seq_length, step_size=seq_length, augmentation=False)
+    train_data_loader = DatasetLoader(dataset_path, train_videos_list, N=seq_length, step_size=step_size, augmentation=False)
     
     # create validation data loader
-    valid_sequence_length = valid["sequence_length"]
-    valid_shift = valid["shift"]
-    valid_augment = valid["augment"]
-    valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=seq_length, step_size=seq_length, augmentation=False)
+    valid_data_loader = DatasetLoader(dataset_path, valid_videos_list, N=seq_length, step_size=step_size, augmentation=False)
 
     # create test data loader
-    test_sequence_length = valid["sequence_length"]
-    test_shift = valid["shift"]
-    test_augment = valid["augment"]
-    test_data_loader = DatasetLoader(dataset_path, test_videos_list, N=seq_length, step_size=seq_length, augmentation=False)
+    test_data_loader = DatasetLoader(dataset_path, test_videos_list, N=seq_length, step_size=step_size, augmentation=False)
 
-
-    sequence_length = train["sequence_length"]
-
-    # load data for training
-    lr = float(optimizer["lr"])
-    batch_size = optimizer["batch_size"]
-    num_epochs = optimizer["max_epochs"]
-    patience = optimizer["patience"]
-    decrease_lr = optimizer["decrease_lr"]
-    lr_decay = optimizer["lr_decay"]
-    lr_decay_epochs = optimizer["lr_decay_epochs"]
 
     device = input("Device to train on: ")
     if not torch.cuda.is_available():
@@ -276,7 +255,7 @@ if __name__ == "__main__":
     extractor_model = Extractor()
     extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
 
-    evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, 300)
+    evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, seq_length, output_path)
     print("evaluating train data")
     loss = evaluator.evaluate(train_data_loader, tag = "train")
     print("train loss:", loss)

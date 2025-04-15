@@ -166,7 +166,7 @@ class ExtractorTrainer:
         plt.savefig(os.path.join(self.output_path, "extractor_valid_loss.png"))
         plt.close()
 
-        with open(os.path.join(self.output_path, "train_loss.csv"), mode='w', newline='') as csv_file:
+        with open(os.path.join(self.output_path, "extractor_train_log.csv"), mode='w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file)
             csv_writer.writerow(['epoch', 'train_loss', 'valid_loss'])
             for i in range(len(train_loss_log)):

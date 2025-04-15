@@ -181,7 +181,7 @@ class DatasetLoader:
         
         # shuffle the videos
         self.current_video_idx = 0
-        # random.shuffle(self.videos)
+        random.shuffle(self.videos)
         self.load_next_video()
         self.current_N_sequence = 0
 
