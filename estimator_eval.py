@@ -197,7 +197,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/config_evaluation_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/synthetic/config_evaluation_synthetic.yaml"))
     data = config_data["data"]
     weights = config_data["weights"]
     extractor_weights_path = weights["extractor_weights"]

@@ -44,5 +44,5 @@ class ExtractorLoss(nn.Module):
         l = len(x)
         loss_sum = 0
         for i in range(l):
-            loss_sum = self.SNR(x[i], f_true[i], fs[i], deltas[i], sampling_f, f_range)
+            loss_sum += self.SNR(x[i], f_true[i], fs[i], deltas[i], sampling_f, f_range)
         return loss_sum / l
