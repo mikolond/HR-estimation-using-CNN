@@ -4,13 +4,12 @@ import os
 import numpy as np
 import torch
 
-from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Datasets_handlers.Estimator.dataset_creator import DatasetCreator
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 
 from estimator_trainer import EstimatorTrainer
 
-CONFIG_PATH = os.path.join("config_files", "synthetic", "config_estimator_synthetic.yaml")
+CONFIG_PATH = os.path.join("config_files", "latent_model_test", "config_estimator_synthetic.yaml")
 # CONFIG_PATH = os.path.join("config_files", "pure", "config_estimator_pure_halmos_exp1.yaml")
 
 
