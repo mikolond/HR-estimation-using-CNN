@@ -39,7 +39,14 @@ if __name__ == "__main__":
     dim1 = get_dims(dim1, 12, 1, 0)
     dim2 = get_dims(dim2, 10, 1, 0)
     # max pool
-    dim1 = get_dims(dim1, 15, 1, 0)
-    dim2 = get_dims(dim2, 10, 1, 0)
+    dim1 = get_dims(dim1, 12, 1, 0)
+    dim2 = get_dims(dim2, 8, 1, 0)
     print("layer 3: ", dim1, dim2)
+
+    dim1 = 300
+    dim2 = 12
+
+    dim1 = get_dims(dim1, 19, 1, 9)
+    dim2 = get_dims(dim2, 12, 1, 0)
+    print("layer 4: ", dim1, dim2)
 
