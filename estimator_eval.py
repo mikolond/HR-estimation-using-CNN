@@ -1,6 +1,6 @@
 import torch
 from Models.estimator_model import Estimator
-from Models.extractor_model import Extractor
+from Models.extractor_latent import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
@@ -91,6 +91,7 @@ class EstimatorEval:
                 predicted.append(prediction)
                 progress = data_loader.get_progress()
                 print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
+                get_max_freq_padded(extractor_output, 30, hr_data, predicted, pad_factor=10)
 
         return ground_truth, predicted
     

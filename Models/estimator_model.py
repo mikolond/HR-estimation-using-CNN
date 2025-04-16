@@ -83,8 +83,8 @@ class Estimator(nn.Module):
 
 
     def forward(self, x):
-        # normalization
-        x = x - torch.mean(x, dim=-1).unsqueeze(dim=-1)
+        # normalization to [-1, 1]
+        x = (x - x.mean()) / x.std()
 
         x = self.conv1(x)
         x = self.conv2(x)

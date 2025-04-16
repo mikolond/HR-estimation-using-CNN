@@ -1,9 +1,9 @@
 data:
     benchmark: "benchmarks/benchmark_debug_synthetic.yaml"
     extractor_dataset_dir: "datasets/dataset_synthetic/"
-    extractor_weights: "output/synthetic_new/output/synthetic_new/best_extractor_weights.pth"
-    estimator_dataset_dir: "datasets/estimator_synthetic/"
-    output_dir: "output/synthetic_new/"
+    extractor_weights: "output/synthetic_new3//best_extractor_weights.pth"
+    estimator_dataset_dir: "datasets/estimator_synthetic_new3/"
+    output_dir: "output/synthetic_new3/"
 
 optimizer:
     batch_size: 400
@@ -11,8 +11,8 @@ optimizer:
     max_epochs: 600
     patience: 200
     decrease_lr: True
-    lr_decay: 0.6
-    lr_decay_epochs: [200,300]
+    lr_decay: 0.2
+    lr_decay_epochs: [20,100,200,300]
 
 dataset_creator_N: 600
 dataset_creator_augmentation: False

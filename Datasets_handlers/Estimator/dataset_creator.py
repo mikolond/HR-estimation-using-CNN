@@ -1,4 +1,5 @@
-from Models.extractor_model import Extractor
+# from Models.extractor_model import Extractor
+from Models.extractor_latent import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import torch
 import numpy as np
@@ -62,7 +63,7 @@ def process_video(model, extractor_dataset_path, video, estimator_dataset_path, 
                 sequence = dataset_loader.get_sequence()
                 hr_data = dataset_loader.get_hr_list()
                 x = torch.tensor(sequence.reshape(N,192,128,3).transpose(0,3,1,2)).float().to(device)
-                extractor_output = model(x)
+                extractor_output = model(x).reshape(N)
                 # save to csv file N rows
                 for i in range(N):
                     csv_writer.writerow([i + N * sequence_count, extractor_output[i].item(), hr_data[i]])

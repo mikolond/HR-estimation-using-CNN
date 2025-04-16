@@ -6,7 +6,7 @@ data:
 optimizer:
     batch_size: 1
     cumulative_batch_size: 100
-    lr: 1e-4
+    lr: 1e-2
     max_epochs: 600
     patience: 100
     decrease_lr: True
