@@ -90,6 +90,7 @@ class EstimatorTrainer:
                 valid_loss += loss.item()
         self.model.train()
         valid_loss = valid_loss/valid_count * 60
+        torch.save(self.model.state_dict(), os.path.join(self.best_model_path, "last_estimator_weights.pth"))
         if valid_loss < self.best_loss:
             self.best_loss = valid_loss
             torch.save(self.model.state_dict(), os.path.join(self.best_model_path, "best_estimator_weights.pth"))

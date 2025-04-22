@@ -53,7 +53,12 @@ class ExtractorTrainer:
             raise ValueError("No data in the training dataset")
         if train_data_loader.get_progress()[1] < self.cum_batch_size:
             raise ValueError("Cummulatve batch size is larger than the training dataset")
+    
+    def set_step_size(self, step_size=300):
+        self.step_size = step_size
 
+    def set_batch_size(self, batch_size=1):
+        self.batch_size = batch_size
 
 
     def load_model(self, model_path):
@@ -83,9 +88,14 @@ class ExtractorTrainer:
             self.model.train()
             epoch_done = False
             train_counter = 1
+            new_video = False
+            last_seqence_out = None
+            output = np.array([])
             while not epoch_done:
                 epoch_start = time.time()
-                sequence, f_true, fs, n_of_sequences, epoch_done, deltas = self.create_batch(self.train_data_loader)
+                sequence, f_true, fs, n_of_sequences, epoch_done, deltas, new_video = self.create_batch(self.train_data_loader)
+                if new_video:
+                    last_seqence_out = None
                 if n_of_sequences != 0:
                     before_x = time.time()
                     x = torch.tensor(sequence.reshape(n_of_sequences * self.training_sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
@@ -93,7 +103,13 @@ class ExtractorTrainer:
                         print("shape of x", x.shape)
                     f_true = torch.tensor(f_true).float().to(self.device)
                     before_infer = time.time()
-                    output = self.model(x).reshape(n_of_sequences, self.training_sequence_length)
+                    if last_seqence_out is not None:
+                        current_sequence = torch.cat((last_seqence_out, x), dim=1)
+                        for i in range(0,self.batch_size, self.step_size):
+                            output = np.concatenate((output, self.model(current_sequence[i:i+self.step_size]).reshape(self.step_size, self.training_sequence_length)), axis=0)
+                    else:
+                        output = self.model(x).reshape(n_of_sequences, self.training_sequence_length)
+                    last_seqence_out = x
                     if self.debug:
                         print("output shape", output.shape)
                     before_loss = time.time()
@@ -129,7 +145,6 @@ class ExtractorTrainer:
             log_file = open(self.valid_loss_log_path,"a")
             log_file.write(str(valid_loss.item()) + "\n")
             log_file.close()
-            torch.save(self.model.state_dict(), os.path.join(self.weights_path, "last_extractor_weights.pth"))
             if valid_loss < best_valid_loss:
                 best_valid_loss = valid_loss
                 epochs_without_improvement = 0
@@ -185,6 +200,7 @@ class ExtractorTrainer:
         n_of_sequences = 0
         next_seq_out = None
         epoch_done = False
+        new_video = False
         for j in range(self.batch_size):
             cur_seq = data_loader.get_sequence()
             sequence[j] = cur_seq
@@ -198,9 +214,13 @@ class ExtractorTrainer:
                 if self.debug:
                     print("epoch done, but batch not full")
                 break
+            if data_loader.new_video:
+                n_of_sequences = j
+                new_video = True
+                break
         if next_seq_out is None:
             epoch_done = True
-        return sequence[:n_of_sequences], f_true[:n_of_sequences], fs[:n_of_sequences], n_of_sequences, epoch_done, deltas
+        return sequence[:n_of_sequences], f_true[:n_of_sequences], fs[:n_of_sequences], n_of_sequences, epoch_done, deltas, new_video
 
     def log_progress(self, loss, start_time):
         epoch_progress = self.train_data_loader.get_progress()
@@ -229,7 +249,7 @@ class ExtractorTrainer:
             valid_count = 0
             validation_done = False
             while not validation_done:
-                sequence, f_true, fs, n_of_sequences, validation_done, deltas = self.create_batch(self.valid_data_loader)
+                sequence, f_true, fs, n_of_sequences, validation_done, deltas, _ = self.create_batch(self.valid_data_loader)
                 if n_of_sequences == 0:
                     break
                 x = torch.tensor(sequence.reshape(n_of_sequences * sequence_length, 192, 128, 3).transpose(0, 3, 1, 2)).float().to(self.device)
