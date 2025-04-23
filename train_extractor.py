@@ -7,8 +7,8 @@ import torch
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from extractor_trainer import ExtractorTrainer
 
-CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthetic.yaml")
-# CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_exp1.yaml")
+# CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthetic.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp10.yaml")
 # CONFIG_PATH = os.path.join("config_files", "latent_model_test", "config_extractor_pure_halmos_latent.yaml")
 
 

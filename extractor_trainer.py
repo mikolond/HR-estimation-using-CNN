@@ -1,6 +1,6 @@
 import torch
-# from Models.extractor_model import Extractor
-from Models.extractor_latent import Extractor
+from Models.extractor_model import Extractor
+# from Models.extractor_latent import Extractor
 # from my_extractor import Extractor
 from Loss.extractor_loss import ExtractorLoss
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
@@ -33,7 +33,7 @@ class ExtractorTrainer:
         self.debug = debug
         self.model = Extractor().to(self.device)
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.7)
         self.validation_loss_log = []
         self.current_epoch = 0
