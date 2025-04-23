@@ -1,5 +1,5 @@
-# from Models.extractor_model import Extractor
-from Models.extractor_latent import Extractor
+from Models.extractor_model import Extractor
+# from Models.extractor_latent import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import torch
 import numpy as np
@@ -58,6 +58,7 @@ def process_video(model, extractor_dataset_path, video, estimator_dataset_path, 
         csv_writer.writerow(['frame_number', 'extractor_output', 'hr'])
         dataset_done = False
         sequence_count = 0
+        frames_to_load = N
         with torch.no_grad():
             while not dataset_done:
                 sequence = dataset_loader.get_sequence()
@@ -65,10 +66,17 @@ def process_video(model, extractor_dataset_path, video, estimator_dataset_path, 
                 x = torch.tensor(sequence.reshape(N,192,128,3).transpose(0,3,1,2)).float().to(device)
                 extractor_output = model(x).reshape(N)
                 # save to csv file N rows
-                for i in range(N):
-                    csv_writer.writerow([i + N * sequence_count, extractor_output[i].item(), hr_data[i]])
+                if frames_to_load == N:
+                    for i in range(N):
+                        csv_writer.writerow([i + N * sequence_count, extractor_output[i].item(), hr_data[i]])
+                else:
+                    # save only the last frames_to_load rows
+                    for i in range(frames_to_load):
+                        csv_writer.writerow([i + N * sequence_count, extractor_output[i].item(), hr_data[i]])
                 sequence_count += 1
-                dataset_done = not dataset_loader.next_sequence()
+                frames_to_load = dataset_loader.next_sequence()
+                if frames_to_load is None:
+                    dataset_done = True
 
     
     

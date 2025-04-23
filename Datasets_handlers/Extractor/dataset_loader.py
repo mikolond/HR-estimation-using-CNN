@@ -4,7 +4,7 @@ import random
 import numpy as np
 
 
-DEBUG = False
+DEBUG = True
 
 
 class DatasetLoader:

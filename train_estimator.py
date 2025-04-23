@@ -9,8 +9,10 @@ from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 
 from estimator_trainer import EstimatorTrainer
 
-CONFIG_PATH = os.path.join("config_files", "synthetic", "config_estimator_synthetic.yaml")
+# CONFIG_PATH = os.path.join("config_files", "synthetic", "config_estimator_synthetic.yaml")
 # CONFIG_PATH = os.path.join("config_files", "pure", "config_estimator_pure_halmos_exp1.yaml")
+
+CONFIG_PATH = os.path.join("config_files", "estimator_augment.yaml")
 
 
 if __name__ == "__main__":
@@ -25,7 +27,8 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + device)
 
     estimator_dataset_path = data["estimator_dataset_dir"]
-    if not os.path.exists(estimator_dataset_path):
+    create_new_dataset = config_data["create_new_dataset"]
+    if not os.path.exists(estimator_dataset_path) or create_new_dataset:
         # if estimator dataet does not exist, create it
         extractor_dataset_path = data["extractor_dataset_dir"]
         if not os.path.exists(extractor_dataset_path):
@@ -94,6 +97,10 @@ if __name__ == "__main__":
 
 
     trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=batch_size, num_epochs=max_epochs, lr=lr, best_model_path=output_path, output_path=output_path)
+    load_model = config_data["load_model"]
+    if load_model:
+        model_path = config_data["load_model_path"]
+        trainer.load_model(model_path)
 
     if decrease_lr:
         trainer.set_lr_decay(lr_decay_epochs, lr_decay)
