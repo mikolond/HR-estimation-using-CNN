@@ -167,9 +167,9 @@ class DatasetLoader:
         color = 3
         self.augmentation_color = np.random.uniform(-color, color,3)
         # random translation
-        translatin = 3
-        self.augmentation_translation_x = np.random.randint(-translatin, translatin)
-        self.augmentation_translation_y = np.random.randint(-translatin, translatin)
+        translation = 3
+        self.augmentation_translation_x = np.random.randint(-translation, translation)
+        self.augmentation_translation_y = np.random.randint(-translation, translation)
     
     def reset(self):
         '''

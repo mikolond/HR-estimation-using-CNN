@@ -91,7 +91,7 @@ class EstimatorEval:
                 predicted.append(prediction)
                 progress = data_loader.get_progress()
                 print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
-                get_max_freq_padded(extractor_output, 30, hr_data, predicted, pad_factor=10)
+                # get_max_freq_padded(extractor_output, 30, hr_data, prediction, pad_factor=10)
 
         return ground_truth, predicted
     
@@ -142,7 +142,7 @@ def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_f
 
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    # plot_sequence(output, freqs, fft_values, hr,predicted, "trash/with_learning") # Different filename for padded plot
+    plot_sequence(output, freqs, fft_values, hr,predicted, "trash/with_learning") # Different filename for padded plot
     time.sleep(0.5)
 
     return max_freq
@@ -180,6 +180,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
     plt.savefig(os.path.join(save_path, "sequence.png"))
     plt.close()
     plt.figure()
+    freqs = freqs * 60
     plt.plot(freqs,fft)
     # plot the real hr as a dot on the graph with y axis value of 0
     plt.scatter(real_hr, 0, color='red')
@@ -188,9 +189,10 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
     plt.xlabel("Frequency")
     plt.ylabel("Amplitude")
     plt.legend(["Frequency","Real HR", "Predicted HR"])
-    if plot_counter <= 50:
-        plt.savefig(os.path.join(save_path, "frequency_spectrum"+str(plot_counter)+".png"))
-        plot_counter += 1
+    # if plot_counter <= 50:
+    #     plt.savefig(os.path.join(save_path, "frequency_spectrum"+str(plot_counter)+".png"))
+    #     plot_counter += 1
+    plt.savefig(os.path.join(save_path, "frequency_spectrum.png"))
     plt.close()
 
 
@@ -198,7 +200,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_test.yaml"))
+    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_exp10_last.yaml"))
     data = config_data["data"]
     weights = config_data["weights"]
     extractor_weights_path = weights["extractor_weights"]
