@@ -1,6 +1,6 @@
 import torch
 from Models.estimator_model import Estimator
-from Models.extractor_latent import Extractor
+from Models.extractor_model import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
@@ -142,7 +142,7 @@ def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_f
 
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    plot_sequence(output, freqs, fft_values, hr,predicted, "trash/with_learning") # Different filename for padded plot
+    # plot_sequence(output, freqs, fft_values, hr,predicted, "trash/with_learning") # Different filename for padded plot
     time.sleep(0.5)
 
     return max_freq
@@ -198,7 +198,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/synthetic/config_evaluation_synthetic.yaml"))
+    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_test.yaml"))
     data = config_data["data"]
     weights = config_data["weights"]
     extractor_weights_path = weights["extractor_weights"]

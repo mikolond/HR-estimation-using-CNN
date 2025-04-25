@@ -4,7 +4,7 @@ import random
 import numpy as np
 
 
-DEBUG = True
+DEBUG = False
 
 
 class DatasetLoader:
@@ -103,8 +103,9 @@ class DatasetLoader:
                     cv2.imshow("frame", frame_to_show)
                     cv2.waitKey(0)
                 # translate the image randomly
-                translation = 10
-                M = np.float32([[1,0,random.randint(-translation, translation)],[0,1,random.randint(-translation, translation)]])
+                translation_x = self.augmentation_translation_x
+                translation_y = self.augmentation_translation_y
+                M = np.float32([[1,0,translation_x],[0,1,translation_y]])
                 frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
             self.frames = np.roll(self.frames, -1, axis=0)
             self.frames[-1:] = frame
@@ -160,11 +161,15 @@ class DatasetLoader:
     def set_augmentation(self):
         # generate agumentation parameters
         # random angle
-        angle = 30
+        angle = 5
         self.augmentation_angle = random.uniform(-angle,angle)
         # random color
-        color = 10
-        self.augmentation_color = np.random.randint(-color, color) * np.ones((1,1,3), dtype=np.uint8)
+        color = 3
+        self.augmentation_color = np.random.uniform(-color, color,3)
+        # random translation
+        translatin = 3
+        self.augmentation_translation_x = np.random.randint(-translatin, translatin)
+        self.augmentation_translation_y = np.random.randint(-translatin, translatin)
     
     def reset(self):
         '''

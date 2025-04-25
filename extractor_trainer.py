@@ -64,8 +64,8 @@ class ExtractorTrainer:
         max_hr = max(hr_list)
         median_hr = np.median(hr_list)
         delta = max(abs(min_hr - median_hr), abs(max_hr - median_hr)) / 60 # convert bpm to Hz
-        if delta > 15/60:
-            delta = 15/60
+        if delta > self.hr_data["delta"]:
+            delta = self.hr_data["delta"]
         return delta
 
     def train(self):
@@ -97,18 +97,15 @@ class ExtractorTrainer:
                     if self.debug:
                         print("output shape", output.shape)
                     before_loss = time.time()
-                    delta = self.hr_data["delta"]
                     f_range = self.hr_data["f_range"]
                     sampling_f = self.hr_data["sampling_f"]
                     loss = self.loss_fc(output, f_true, fs, deltas, sampling_f, f_range)
                     train_loss += loss.item()
                     self.log_progress(loss.item(), start_time)
+                    loss = loss / self.cum_batch_size
                     before_backward = time.time()
                     loss.backward()
                     if train_counter % self.cum_batch_size == 0 or epoch_done:
-                        for param in self.model.parameters():
-                            if param.grad is not None:
-                                param.grad.data /= self.cum_batch_size
                         before_optimizer = time.time()
                         self.optimizer.step()
                         self.optimizer.zero_grad()

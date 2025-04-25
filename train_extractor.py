@@ -8,7 +8,8 @@ from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from extractor_trainer import ExtractorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthetic.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp10.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp15.yaml")
+# CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_exp1.yaml")
 # CONFIG_PATH = os.path.join("config_files", "latent_model_test", "config_extractor_pure_halmos_latent.yaml")
 
 
@@ -63,7 +64,6 @@ if __name__ == "__main__":
     sampling_f = hr_data["sampling_frequency"]/60
     hr_data = {"delta": delta, "f_range": f_range, "sampling_f": sampling_f}
 
-    sequence_length = train["sequence_length"]
 
     # load data for training
     lr = float(optimizer["lr"])
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     else:
         device = torch.device("cuda:" + device)
     trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, output_path=output_path, learning_rate=lr, batch_size=batch_size, 
-                               num_epochs=num_epochs, patience = patience, N=sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, 
+                               num_epochs=num_epochs, patience = patience, N=train_sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, 
                                lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = output_path)
     if config_data["load_model"]:
         if os.path.exists(config_data["load_model_path"]):

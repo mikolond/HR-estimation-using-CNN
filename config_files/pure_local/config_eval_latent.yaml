@@ -1,0 +1,12 @@
+data:
+    benchmark: "benchmarks/benchmark_pure.yaml"
+    dataset_dir: "datasets/dataset_pure"
+    output_dir: "output/pure_latent_extractor_exp3"
+
+weights:
+    extractor_weights: "output/pure_latent_extractor_exp3/best_extractor_weights.pth"
+    estimator_weights: "output/pure_latent_extractor_exp3/best_estimator_weights.pth"
+
+dataset_options:
+    sequence_length: 300
+    shift: 300
