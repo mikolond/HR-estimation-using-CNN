@@ -39,16 +39,16 @@ class Estimator(nn.Module):
     def __init__(self):
         super(Estimator, self).__init__()
         # convolution parameters
-        conv_kernel = 16
-        max_pool_kernel = 5
+        conv_kernel = 8
+        max_pool_kernel = 10
 
 
         alpha_elu = 1.0 # ELU alpha
-        channels_1 = 128
-        channels_2 = 128
-        channels_3 = 128
-        channels_4 = 128
-        channels_5 = 128
+        channels_1 = 8
+        channels_2 = 8
+        channels_3 = 8
+        channels_4 = 8
+        channels_5 = 8
 
 
 
@@ -74,8 +74,10 @@ class Estimator(nn.Module):
         self.conv10 = create_layer(["DP",0.3,"CONV", channels_3, channels_4 , conv_kernel, 1, 0, 1, "BN", channels_4, "ELU", alpha_elu])
         # 33
         self.conv11 = create_layer(["DP",0.3,"CONV", channels_4, channels_5 , conv_kernel, 1, 0, 1, "BN", channels_5, "ELU", alpha_elu])
+
+        self.conv12 = create_layer(["DP",0.2,"CONV", channels_5, channels_5 , conv_kernel, 1, 0, 1, "MP",max_pool_kernel, 1 ,"BN", channels_5, "ELU", alpha_elu])
         # 24
-        self.conv_last = create_layer(["DP",0.5,"CONV", channels_5, 1, conv_kernel, 1, 0, 1,"MP",max_pool_kernel, 1, "BN", 1, "ELU", alpha_elu])
+        self.conv_last = create_layer(["DP",0.5,"CONV", channels_5, 1, 1, 1, 0, 1])
         # 6
         self.ada_avg_pool = nn.AdaptiveAvgPool1d(output_size=1)
         
@@ -84,7 +86,7 @@ class Estimator(nn.Module):
 
     def forward(self, x):
         # normalization to [-1, 1]
-        x = (x - x.mean()) / x.std()
+        x = (x - x.mean())
 
         x = self.conv1(x)
         x = self.conv2(x)
@@ -97,6 +99,7 @@ class Estimator(nn.Module):
         x = self.conv9(x)
         x = self.conv10(x)
         x = self.conv11(x)
+        x = self.conv12(x)
         x = self.conv_last(x)
         x = self.ada_avg_pool(x)
 

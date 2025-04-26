@@ -1,6 +1,7 @@
 import torch
 from Models.estimator_model import Estimator
 from Models.extractor_model import Extractor
+# from Models.extractor_latent import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
@@ -91,7 +92,7 @@ class EstimatorEval:
                 predicted.append(prediction)
                 progress = data_loader.get_progress()
                 print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
-                # get_max_freq_padded(extractor_output, 30, hr_data, prediction, pad_factor=10)
+                get_max_freq_padded(extractor_output, 30, hr_data, prediction, pad_factor=10)
 
         return ground_truth, predicted
     
@@ -200,7 +201,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_exp10_last.yaml"))
+    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_test.yaml"))
     data = config_data["data"]
     weights = config_data["weights"]
     extractor_weights_path = weights["extractor_weights"]

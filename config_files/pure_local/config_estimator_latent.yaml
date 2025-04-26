@@ -1,9 +1,9 @@
 data:
     benchmark: "benchmarks/benchmark_pure.yaml"
     extractor_dataset_dir: "datasets/dataset_pure"
-    extractor_weights: "output/pure_latent_extractor_exp3/best_extractor_weights.pth"
+    extractor_weights: "output/pure_latent_extractor_exp4/best_extractor_weights.pth"
     estimator_dataset_dir: "datasets/estimator_pure_latent"
-    output_dir: "output/pure_latent_extractor_exp3"
+    output_dir: "output/pure_latent_extractor_exp4"
 
 optimizer:
     batch_size: 500
@@ -14,7 +14,7 @@ optimizer:
     lr_decay: 0.2
     lr_decay_epochs: [50,100,200, 400, 600]
 
-create_new_dataset: False
+create_new_dataset: True
 dataset_creator_N: 600
 dataset_creator_augmentation: False
 

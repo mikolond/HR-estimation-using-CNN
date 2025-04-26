@@ -6,21 +6,21 @@ data:
     output_dir: "output/pure_exp15_best"
 
 optimizer:
-    batch_size: 500
-    lr: 0.05
+    batch_size: 1000
+    lr: 0.001
     max_epochs: 1000
     patience: 150
-    decrease_lr: False
+    decrease_lr: True
     lr_decay: 0.2
-    lr_decay_epochs: [50,100,200, 400, 600]
+    lr_decay_epochs: [100,200, 400, 600]
 
-create_new_dataset: False
+create_new_dataset: True
 dataset_creator_N: 600
-dataset_creator_augmentation: False
+dataset_creator_augmentation: True
 
 train:
     sequence_length: 300
-    shift: 50
+    shift: 20
 
 valid:
     sequence_length: 300
@@ -28,5 +28,5 @@ valid:
 
 epochs_to_new_dataset: 100
 
-load_model: False
-load_model_path: "output/weights/synthetic/extractor/epoch_150.pth"
+load_model: True
+load_model_path: "output/pure_exp15_best/best_estimator_weights.pth"

@@ -28,7 +28,7 @@ class EstimatorTrainer:
         self.model = Estimator()
         self.model.to(device)
         # init optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(),amsgrad=False, lr=self.lr, weight_decay=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(),amsgrad=False, lr=self.lr, weight_decay=0.00001)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=0)
         # init loss function
         self.criterion = EstimatorLoss().to(device)

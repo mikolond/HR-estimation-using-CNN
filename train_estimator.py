@@ -10,7 +10,7 @@ from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 from estimator_trainer import EstimatorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "config_estimator_synthetic.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_exp15.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_test.yaml")
 
 
 

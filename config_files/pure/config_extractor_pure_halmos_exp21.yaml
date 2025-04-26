@@ -1,7 +1,7 @@
 data:
     benchmark: "benchmarks/benchmark_pure.yaml"
-    dataset_dir: "datasets/dataset_pure"
-    output_dir: "output/pure_exp1_local_test2/"
+    dataset_dir: "/mnt/data_personal/mikolond/datasets/pure_extractor_dataset"
+    output_dir: "output/pure_exp21/"
 
 optimizer:
     batch_size: 1
