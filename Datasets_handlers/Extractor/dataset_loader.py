@@ -30,12 +30,20 @@ class DatasetLoader:
                 raise Exception("Video path does not exist:", os.path.join(self.dataset_path, video))
             
         self.reset()
+        self.varying_offset = False
+        self.offset = 10
+
+    def set_varying_offset(self, offset):
+        self.offset = offset
+        self.varying_offset = True
 
     def next_sequence(self):
         '''
         Load the next frames according to the step_size
         return: frame
         '''
+        if self.varying_offset:
+            self.step_size = random.randint(1, self.offset)
         self.new_video = False
         self.current_N_sequence += 1
         if self.current_image + self.step_size + self.N <= self.current_video_frames_count:
@@ -121,6 +129,7 @@ class DatasetLoader:
         '''
         Load the next video and initialize frames and hr data
         '''
+
         self.new_video = True
         if self.augmentation:
             self.set_augmentation()
@@ -161,13 +170,13 @@ class DatasetLoader:
     def set_augmentation(self):
         # generate agumentation parameters
         # random angle
-        angle = 10
+        angle = 30
         self.augmentation_angle = random.uniform(-angle,angle)
         # random color
-        color = 10
+        color = 30
         self.augmentation_color = np.random.uniform(-color, color,3)
         # random translation
-        translation = 10
+        translation = 30
         self.augmentation_translation_x = np.random.randint(-translation, translation)
         self.augmentation_translation_y = np.random.randint(-translation, translation)
     
