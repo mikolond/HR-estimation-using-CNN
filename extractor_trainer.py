@@ -1,7 +1,7 @@
 import torch
-from Models.extractor_model import Extractor
+# from Models.extractor_model import Extractor
 # from Models.extractor_latent import Extractor
-# from Models.extractor_latent3 import Extractor
+from Models.extractor_latent3 import Extractor
 from Loss.extractor_loss import ExtractorLoss
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import matplotlib.pyplot as plt

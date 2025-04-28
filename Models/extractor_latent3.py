@@ -94,17 +94,17 @@ class Extractor(nn.Module):
         self.conv13 = create_layer(["DP",0.1,"CONV_dil",ch, ch, (3,3), (1,1), (3,0), (3,1),"ELU", alpha_elu])
         self.maxpool3 = nn.MaxPool2d(kernel_size=(3,3), stride=(2,2), padding=(0,0))
 
-        self.conv_trans1 = create_layer(["DP",0.2,"CONV_trans",ch, ch, (3,3), (2,1), (0,0), (0,0), "ELU", alpha_elu])
-        self.conv14 = create_layer(["DP",0.2,"CONV",ch, ch, (3,3), (1,1), (1,0),"MP",(2,2),(1,1), "ELU", alpha_elu])
+        self.conv_trans1 = create_layer(["DP",0.2,"CONV_trans",ch, ch, (3,3), (2,1), (0,0), (1,0), "ELU", alpha_elu])
+        self.conv14 = create_layer(["DP",0.2,"CONV",ch, ch, (3,3), (1,2), (1,0), "ELU", alpha_elu])
 
-        self.conv_trans2 = create_layer(["DP",0.2,"CONV_trans",ch, ch, (3,3), (2,1), (0,0), (0,0), "ELU", alpha_elu])
-        self.conv15 = create_layer(["DP",0.2,"CONV",ch, ch, (3,3), (1,1), (1,0),"MP",(2,2),(1,1), "ELU", alpha_elu])
+        self.conv_trans2 = create_layer(["DP",0.2,"CONV_trans",ch, ch, (3,3), (2,1), (0,0), (1,0), "ELU", alpha_elu])
+        self.conv15 = create_layer(["DP",0.2,"CONV",ch, ch, (3,3), (1,2), (1,0), "ELU", alpha_elu])
 
-        self.conv_trans3 = create_layer(["DP",0.2,"CONV_trans",ch, ch, (3,3), (2,1), (0,0), (0,0), "ELU", alpha_elu])
-        self.conv16 = create_layer(["DP",0.3,"CONV", ch, ch, (3,3), (1,1), (1,0),"MP",(2,2),(1,1), "ELU", alpha_elu])
+        self.conv_trans3 = create_layer(["DP",0.2,"CONV_trans",ch, ch, (3,3), (2,1), (0,0), (1,0), "ELU", alpha_elu])
+        self.conv16 = create_layer(["DP",0.3,"CONV",ch, ch, (3,3), (1,2), (1,0),"ELU", alpha_elu])
 
         # self.maxpool4 = nn.MaxPool2d(kernel_size=(1,5), stride=(1,1), padding=(0,0))
-        self.conv17 = create_layer(["DP",0.3,"CONV",ch, ch, (1,5), (1,1), (0,0), "ELU", alpha_elu])
+        self.conv17 = create_layer(["DP",0.3,"CONV",ch, ch, (3,7), (1,1), (1,0), "ELU", alpha_elu])
 
         self.conv_last = create_layer(["DP",0.5,"CONV",ch, out_ch, 1, 1, 0])
 
@@ -156,29 +156,29 @@ class Extractor(nn.Module):
         x = torch.cat((x1,x2,x3),3).reshape(1,x.shape[1],x.shape[2],3*33)
         # print("after conv11,12,13 cat:",x.shape)
         x = self.maxpool3(x)
-        print("after maxpool3:",x.shape)
+        # print("after maxpool3:",x.shape)
 
         x = self.conv_trans1(x)
-        print("after conv_trans1:",x.shape)
+        # print("after conv_trans1:",x.shape)
         x = self.conv14(x)
-        print("after conv14:",x.shape)
+        # print("after conv14:",x.shape)
 
         x = self.conv_trans2(x)
-        print("after conv_trans2:",x.shape)
+        # print("after conv_trans2:",x.shape)
         x = self.conv15(x)
-        print("after conv15:",x.shape)
+        # print("after conv15:",x.shape)
 
         x = self.conv_trans3(x)
-        print("after conv_trans3:",x.shape)
+        # print("after conv_trans3:",x.shape)
         x = self.conv16(x)
-        print("after conv16:",x.shape)
+        # print("after conv16:",x.shape)
         # x = self.maxpool4(x)
         x = self.conv17(x)
-        print("after maxpool4:",x.shape)
+        # print("after maxpool4:",x.shape)
 
 
         x = self.conv_last(x)
-        print("after conv_last:",x.shape)
+        # print("after conv_last:",x.shape)
         return x
 
     def init_weights(self):
