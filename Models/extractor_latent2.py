@@ -65,7 +65,7 @@ class Extractor(nn.Module):
         # 82 x 55
         self.conv2 = create_layer(["DP",0.05,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
         # 54 x 37
-        self.conv3 = create_layer(["DP",0.05,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
+        self.conv3 = create_layer(["DP",0.2,"CONV",ch, ch, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch,"ELU", alpha_elu])
         # 26 x 19
         self.conv4 = create_layer(["DP2",0.2,"CONV",ch, ch, (12,8), c_st, pad,"MP",(12,8), m_st, "BN", ch,"ELU", alpha_elu])
         # 4 x 5
@@ -74,11 +74,11 @@ class Extractor(nn.Module):
         # 2d convolution 
 
         # batch_size x 12
-        self.conv5 = create_layer(["DP",0.2,"CONV",ch, ch, (11,12), (1,1), (5,0), "ELU", alpha_elu])
+        self.conv5 = create_layer(["DP",0.3,"CONV",ch, ch, (11,12), (1,1), (5,0), "ELU", alpha_elu])
         # batch_size x 9
-        self.conv6 = create_layer(["DP",0.2,"CONV",ch, ch, (9,9), (1,1), (5,0), "ELU", alpha_elu])
+        self.conv6 = create_layer(["DP",0.5,"CONV",ch, ch, (9,9), (1,1), (4,0), "ELU", alpha_elu])
         # batch_size x 1
-        self.conv_last = create_layer(["DP",0.2,"CONV",ch, out_ch, 1, 1, 0])
+        self.conv_last = create_layer(["DP",0.5,"CONV",ch, out_ch, 1, 1, 0])
         # batch_size x 1
 
 
@@ -91,13 +91,17 @@ class Extractor(nn.Module):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
-        print("after conv3:",x.shape)
+        # print("after conv3:",x.shape)
         x = self.conv4(x)
-        x = x.reshape(1,x.shape[0],20)
-        print("after conv4:",x.shape)
+        # print("after conv4:",x.shape)
+        x = x.reshape(1,x.shape[1],x.shape[0],20)
+        # print("after conv4 cat:",x.shape)
         x = self.conv5(x)
+        # print("after conv5:",x.shape)
         x = self.conv6(x)
+        # print("after conv6:",x.shape)
         x = self.conv_last(x)
+        # print("after conv_last:",x.shape)
         return x
 
     def init_weights(self):

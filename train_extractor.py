@@ -8,8 +8,8 @@ from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from extractor_trainer import ExtractorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthetic.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp21.yaml")
-# CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_exp1.yaml")
+# CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp21.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_exp1.yaml")
 # CONFIG_PATH = os.path.join("config_files", "latent_model_test", "config_extractor_pure_halmos_latent_exp5.yaml")
 
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     lr_decay = optimizer["lr_decay"]
     lr_decay_epochs = optimizer["lr_decay_epochs"]
     device = input("Device to train on: ")
-    if not torch.cuda.is_available():
+    if not torch.cuda.is_available() or device == "cpu":
         device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + device)

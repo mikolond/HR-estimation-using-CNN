@@ -1,17 +1,17 @@
 data:
-    benchmark: "benchmarks/benchmark_debug_synthetic.yaml"
-    dataset_dir: "datasets/dataset_synthetic/"
-    output_dir: "output/synthetic_new2/"
+    benchmark: "benchmarks/benchmark_pure.yaml"
+    dataset_dir: "/mnt/data_personal/mikolond/datasets/pure_extractor_dataset"
+    output_dir: "output/pure_exp22/"
 
 optimizer:
     batch_size: 1
-    cumulative_batch_size: 30
+    cumulative_batch_size: 50
     lr: 1e-3
-    max_epochs: 40
-    patience: 5
+    max_epochs: 600
+    patience: 150
     decrease_lr: True
-    lr_decay: 0.2
-    lr_decay_epochs: [5, 10]
+    lr_decay: 0.5
+    lr_decay_epochs: [20, 50, 80, 100]
 
 hr_data:
     frequency_range: [40, 240]

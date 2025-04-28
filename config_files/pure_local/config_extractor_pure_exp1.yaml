@@ -6,11 +6,11 @@ data:
 optimizer:
     batch_size: 1
     cumulative_batch_size: 50
-    lr: 1e-4
+    lr: 1e-3
     max_epochs: 600
     patience: 150
     decrease_lr: True
-    lr_decay: 0.8
+    lr_decay: 0.5
     lr_decay_epochs: [20, 50, 80, 100]
 
 hr_data:

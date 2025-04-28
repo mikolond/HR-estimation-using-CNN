@@ -1,5 +1,5 @@
 # from Models.extractor_model import Extractor
-from Models.extractor_latent import Extractor
+from Models.extractor_latent3 import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import torch
 import numpy as np

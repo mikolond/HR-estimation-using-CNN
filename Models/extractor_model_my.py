@@ -43,7 +43,7 @@ class Extractor(nn.Module):
     def __init__(self):
         super(Extractor, self).__init__()
         # convolution parameters
-        c_k_size = (15,10) # convolution kernel size
+        c_k_size = (3,3) # convolution kernel size
         c_k_last_size = (12,10)
         c_st = (1,1) # convolution stride
         pad = (0,0) # padding
@@ -53,22 +53,25 @@ class Extractor(nn.Module):
         out_ch = 1 # output channels
 
 
-        m_k_size = (15,10) # max pooling kernel size
-        m_st = (1,1) # max pooling stride
+        m_k_size = (3,3) # max pooling kernel size
+        m_st = (2,2) # max pooling stride
 
         alpha_elu = 1.0 # ELU alpha
         self.ada_avg_pool2d = nn.AdaptiveAvgPool2d(output_size=(192, 128))
 
+        # convolutional layers
         # 192 x 128
-        self.conv1 = create_layer(["BN",in_ch,"DP2",0.05,"CONV", in_ch, ch1, c_k_size, c_st, pad,"MP" ,m_k_size, (2,2), "BN", ch1,"ELU", alpha_elu])
-        # 89 x 60
+        self.conv1 = create_layer(["BN",in_ch,"DP2",0.05,"CONV", in_ch, ch1, c_k_size, c_st, pad,"MP" ,m_k_size, m_st, "BN", ch1,"ELU", alpha_elu])
+        # 
         self.conv2 = create_layer(["DP",0.05,"CONV",ch1, ch1, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch1,"ELU", alpha_elu])
-        # 38 x 26
+        # 
         self.conv3 = create_layer(["DP",0.05,"CONV",ch1, ch2, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
-        # 13 x 9
-        self.conv4 = create_layer(["DP2",0.2,"CONV",ch2, ch2, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
-        # 1 x 1
-        self.conv5 = create_layer(["DP",0.5,"CONV",ch2, out_ch, 1, 1, 0])
+        # 
+        self.conv4 = create_layer(["DP2",0.2,"CONV",ch2, ch2, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
+        # 
+        self.conv5 = create_layer(["DP2",0.2,"CONV",ch2, ch2, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
+        # 3 x 1
+        self.conv_last = create_layer(["DP",0.5,"CONV",ch2, out_ch, 1, 1, 0])
 
 
         self.init_weights()
@@ -83,6 +86,9 @@ class Extractor(nn.Module):
         x = self.conv3(x)
         x = self.conv4(x)
         x = self.conv5(x)
+        print("after conv5",x.shape)
+        x = self.conv_last(x)
+        print("after conv_last",x.shape)
         # normalize x from [min(x), max(x)] to [0,1]
         # x = x - x.min()
         # x = x / (x.max() - x.min())
@@ -94,7 +100,7 @@ class Extractor(nn.Module):
                 nn.init.xavier_normal_(layer.weight, gain=1)
                 nn.init.zeros_(layer.bias)
             if type(layer) == nn.BatchNorm2d:
-                nn.init.normal_(layer.weight, 0, 0.1)
+                nn.init.uniform_(layer.weight, 0, 0.1)
                 nn.init.zeros_(layer.bias)
             if type(layer) == nn.Linear:
                 nn.init.xavier_normal_(layer.weight, gain=1)

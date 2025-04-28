@@ -10,7 +10,7 @@ from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 from estimator_trainer import EstimatorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "config_estimator_synthetic.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_test.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_pure_exp1.yaml")
 
 
 
@@ -23,8 +23,8 @@ if __name__ == "__main__":
     data = config_data["data"]
 
     device = input("Device to train on: ")
-    if not torch.cuda.is_available():
-        device = torch.device("cpu")
+    if not torch.cuda.is_available() or device == "cpu":
+        device = torch.device("cpu") 
     else:
         device = torch.device("cuda:" + device)
 

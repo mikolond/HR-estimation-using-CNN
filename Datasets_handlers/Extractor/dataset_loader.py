@@ -90,7 +90,7 @@ class DatasetLoader:
             if self.augmentation:
                 # rotate the image
                 M = cv2.getRotationMatrix2D((frame.shape[1]//2, frame.shape[0]//2), np.radians(self.augmentation_angle), 1)
-                frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+                frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]), flags=cv2.INTER_AREA)
                 # add random shade
                 frame = np.clip(frame + self.augmentation_color, 0, 255)
                 # flip the image
@@ -161,13 +161,13 @@ class DatasetLoader:
     def set_augmentation(self):
         # generate agumentation parameters
         # random angle
-        angle = 3
+        angle = 10
         self.augmentation_angle = random.uniform(-angle,angle)
         # random color
-        color = 1
+        color = 10
         self.augmentation_color = np.random.uniform(-color, color,3)
         # random translation
-        translation = 1
+        translation = 10
         self.augmentation_translation_x = np.random.randint(-translation, translation)
         self.augmentation_translation_y = np.random.randint(-translation, translation)
     

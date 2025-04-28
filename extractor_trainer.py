@@ -1,7 +1,7 @@
 import torch
 from Models.extractor_model import Extractor
 # from Models.extractor_latent import Extractor
-# from my_extractor import Extractor
+# from Models.extractor_latent3 import Extractor
 from Loss.extractor_loss import ExtractorLoss
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import matplotlib.pyplot as plt
@@ -64,8 +64,8 @@ class ExtractorTrainer:
         max_hr = max(hr_list)
         median_hr = np.median(hr_list)
         delta = max(abs(min_hr - median_hr), abs(max_hr - median_hr)) / 60 # convert bpm to Hz
-        if delta > self.hr_data["delta"]:
-            delta = self.hr_data["delta"]
+        delta = min(delta, self.hr_data["delta"])
+        delta = max(delta, self.hr_data["delta"]/2)
         return delta
 
     def train(self):
@@ -93,7 +93,8 @@ class ExtractorTrainer:
                         print("shape of x", x.shape)
                     f_true = torch.tensor(f_true).float().to(self.device)
                     before_infer = time.time()
-                    output = self.model(x).reshape(n_of_sequences, self.training_sequence_length)
+                    output = self.model(x)
+                    output = output.reshape(n_of_sequences, self.training_sequence_length)
                     if self.debug:
                         print("output shape", output.shape)
                     before_loss = time.time()
@@ -139,8 +140,7 @@ class ExtractorTrainer:
             self.train_data_loader.reset()
             self.valid_data_loader.reset()
             self.last_epoch_time = self.current_epoch_time
-            print("\nepoch", i, "done")
-            print("validation loss", self.validation_loss_log)
+            print("\nepoch", i, "done,","validation loss:", self.validation_loss_log[-1], ",train loss:", train_loss)
             # save weights of this epoch
             # path_to_save = os.path.join(self.weights_path, "model_epoch_" + str(i) + ".pth")
             # torch.save(self.model.state_dict(), path_to_save)
