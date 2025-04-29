@@ -1,0 +1,32 @@
+data:
+    benchmark: "benchmarks/benchmark_pure.yaml"
+    extractor_dataset_dir: "datasets/dataset_pure"
+    extractor_weights: "output/pure_exp22/best_extractor_weights.pth"
+    estimator_dataset_dir: "datasets/estimator_pure_exp22_best"
+    output_dir: "output/pure_exp22_fine_tune"
+
+optimizer:
+    batch_size: 50
+    lr: 0.01
+    max_epochs: 1000
+    patience: 150
+    decrease_lr: True
+    lr_decay: 0.4
+    lr_decay_epochs: [200,300, 400,500, 600]
+
+create_new_dataset: False
+dataset_creator_N: 100
+dataset_creator_augmentation: False
+
+train:
+    sequence_length: 300
+    shift: 100
+
+valid:
+    sequence_length: 300
+    shift: 300
+
+epochs_to_new_dataset: 100
+
+load_model: True
+load_model_path: "output/pure_exp22_best/best_estimator_weights.pth"

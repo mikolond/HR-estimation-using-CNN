@@ -1,0 +1,32 @@
+data:
+    benchmark: "benchmarks/benchmark_pure.yaml"
+    extractor_dataset_dir: "datasets/dataset_pure"
+    extractor_weights: "output/pure_local_latent3_exp2/best_extractor_weights.pth"
+    estimator_dataset_dir: "datasets/estimator_pure_latent3_exp2"
+    output_dir: "output/pure_local_latent3_exp2/"
+
+optimizer:
+    batch_size: 600
+    lr: 0.1
+    max_epochs: 1000
+    patience: 300
+    decrease_lr: True
+    lr_decay: 0.2
+    lr_decay_epochs: [200, 400, 600]
+
+create_new_dataset: False
+dataset_creator_N: 150
+dataset_creator_augmentation: False
+
+train:
+    sequence_length: 150
+    shift: 150
+
+valid:
+    sequence_length: 150
+    shift: 150
+
+epochs_to_new_dataset: 100
+
+load_model: False
+load_model_path: "output/weights/synthetic/extractor/epoch_150.pth"

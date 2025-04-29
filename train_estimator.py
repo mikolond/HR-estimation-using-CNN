@@ -3,6 +3,7 @@ import csv
 import os
 import numpy as np
 import torch
+torch.manual_seed(0)
 
 from Datasets_handlers.Estimator.dataset_creator import DatasetCreator
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
@@ -10,7 +11,7 @@ from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 from estimator_trainer import EstimatorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "config_estimator_synthetic.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_pure_latent3_exp1.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_exp22.yaml")
 
 
 
@@ -24,7 +25,7 @@ if __name__ == "__main__":
 
     device = input("Device to train on: ")
     if not torch.cuda.is_available() or device == "cpu":
-        device = torch.device("cpu") 
+        device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + device)
 

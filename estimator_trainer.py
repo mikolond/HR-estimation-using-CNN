@@ -1,7 +1,7 @@
 import torch
 from Models.estimator_model import Estimator
+# from Models.estimator_model_spetlik import Estimator
 from Loss.estimator_loss import EstimatorLoss
-from Loss.pearons_loss import PearsonLoss
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,15 +26,16 @@ class EstimatorTrainer:
         self.best_loss = float("inf")
 
         self.model = Estimator()
+        # self.model.setup()
         self.model.to(device)
         # init optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(),amsgrad=False, lr=self.lr, weight_decay=0.00001)
-        # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=0)
+        self.optimizer = torch.optim.Adam(self.model.parameters(),amsgrad=False, lr=self.lr, weight_decay=0)
+        # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=0.01)
         # init loss function
-        self.criterion = EstimatorLoss().to(device)
+        # self.criterion = EstimatorLoss().to(device)
         # self.criterion = PearsonLoss().to(device)
         # self.criterion = torch.nn.MSELoss().to(device)
-        # self.criterion = torch.nn.L1Loss().to(device)
+        self.criterion = torch.nn.L1Loss().to(device)
         self.output_path = output_path
 
         self.lr_decay = False
@@ -99,7 +100,7 @@ class EstimatorTrainer:
             self.epochs_without_improvement += 1
             if self.epochs_without_improvement >= self.patience:
                 self.early_stopping = True
-                print("Early stopping, best loss:", self.best_loss)
+                print("Early stopping")
         print(f"Validation Loss: {valid_loss}")
         return valid_loss
         
@@ -151,6 +152,7 @@ class EstimatorTrainer:
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] *= self.decay_rate
                 print(f"Learning rate decayed to {self.lr}")
+        print("Training finished, best loss:", self.best_loss)
         # plot training loss
         plt.plot(train_loss_log)
         plt.xlabel("Epoch")
@@ -177,54 +179,60 @@ class EstimatorTrainer:
     def save_model(self, path):
         torch.save(self.model.state_dict(), path)
 
+
+def count_params(m):
+    return sum(p.numel() for p in m.parameters())
 if __name__ == "__main__":
-    import csv
-    import yaml
-    dataset_path = os.path.join("datasets", "estimator_pure_pure_extractor_150")
-    folders_path = os.path.join(dataset_path, "data.csv")
-    folders = []
-    with open(folders_path, 'r') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            folders.append(row)
+    model = Estimator()
+    # model.setup()
+    print("Number of parameters in the model: ", count_params(model))
+    # import csv
+    # import yaml
+    # dataset_path = os.path.join("datasets", "estimator_pure_pure_extractor_150")
+    # folders_path = os.path.join(dataset_path, "data.csv")
+    # folders = []
+    # with open(folders_path, 'r') as file:
+    #     reader = csv.reader(file)
+    #     for row in reader:
+    #         folders.append(row)
 
-    benchmark_path = os.path.join("benchmarks", "benchmark_pure.yaml")
-    benchmark = yaml.safe_load(open(benchmark_path))
-    train_folders = benchmark["trn"]
-    valid_folders = benchmark["val"]
-    train_videos_list = np.array([])
-    valid_videos_list = np.array([])
+    # benchmark_path = os.path.join("benchmarks", "benchmark_pure.yaml")
+    # benchmark = yaml.safe_load(open(benchmark_path))
+    # train_folders = benchmark["trn"]
+    # valid_folders = benchmark["val"]
+    # train_videos_list = np.array([])
+    # valid_videos_list = np.array([])
 
-    for idx in train_folders:
-        train_videos_list = np.append(train_videos_list, np.array(folders[idx]))
+    # for idx in train_folders:
+    #     train_videos_list = np.append(train_videos_list, np.array(folders[idx]))
     
-    for idx in valid_folders:
-        valid_videos_list = np.append(valid_videos_list, np.array(folders[idx]))
+    # for idx in valid_folders:
+    #     valid_videos_list = np.append(valid_videos_list, np.array(folders[idx]))
 
-    # add .csv after every video name
-    for i in range(len(train_videos_list)):
-        train_videos_list[i] += ".csv"
-    for i in range(len(valid_videos_list)):
-        valid_videos_list[i] += ".csv"
+    # # add .csv after every video name
+    # for i in range(len(train_videos_list)):
+    #     train_videos_list[i] += ".csv"
+    # for i in range(len(valid_videos_list)):
+    #     valid_videos_list[i] += ".csv"
 
-    # create training data loader
-    train_data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=300, step_size=50)
+    # # create training data loader
+    # train_data_loader = EstimatorDatasetLoader(dataset_path, train_videos_list, N=300, step_size=50)
     
-    # create validation data loader
-    valid_data_loader = EstimatorDatasetLoader(dataset_path, valid_videos_list, N=300, step_size=300)
+    # # create validation data loader
+    # valid_data_loader = EstimatorDatasetLoader(dataset_path, valid_videos_list, N=300, step_size=300)
 
-    device = input("Device to train on: ")
-    if not torch.cuda.is_available():
-        device = torch.device("cpu")
-    else:
-        device = torch.device("cuda:" + device)
-    # device = torch.device("cpu")
-    output_path = os.path.join("output", "estimator_pure_median")
-    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=600, num_epochs=1000, lr=0.01, best_model_path=output_path, output_path=output_path)
-    trainer.set_patience(300)
-    trainer.set_lr_decay([100,200,300,400,500,600,700], 0.7)
-    # trainer.load_model(os.path.join("output","estimator_pure_weights", "best_model.pth"))
-    trainer.train()
-    # weights_path = os.path.join("output","estimator_weights","weights_latest.pth")
-    # trainer.save_model(weights_path)
+    # device = input("Device to train on: ")
+    # if not torch.cuda.is_available():
+    #     device = torch.device("cpu")
+    # else:
+    #     device = torch.device("cuda:" + device)
+    # # device = torch.device("cpu")
+    # output_path = os.path.join("output", "estimator_pure_median")
+    # trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=600, num_epochs=1000, lr=0.01, best_model_path=output_path, output_path=output_path)
+    # trainer.set_patience(300)
+    # trainer.set_lr_decay([100,200,300,400,500,600,700], 0.7)
+    # # trainer.load_model(os.path.join("output","estimator_pure_weights", "best_model.pth"))
+    # trainer.train()
+    # # weights_path = os.path.join("output","estimator_weights","weights_latest.pth")
+    # # trainer.save_model(weights_path)
 
