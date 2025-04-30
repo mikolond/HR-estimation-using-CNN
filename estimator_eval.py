@@ -2,7 +2,7 @@ import torch
 from Models.estimator_model import Estimator
 # from Models.extractor_latent3 import Extractor
 # from Models.extractor_latent import Extractor
-from Models.extractor_model import Extractor
+from Models.extractor_model_my import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
@@ -203,7 +203,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_exp22_fine_tune.yaml"))
+    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_exp22.yaml"))
     data = config_data["data"]
     weights = config_data["weights"]
     extractor_weights_path = weights["extractor_weights"]
