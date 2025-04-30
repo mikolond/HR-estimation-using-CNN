@@ -79,13 +79,13 @@ class Extractor(nn.Module):
     def forward(self, x):
         # normalization to [-1, 1]
         # x = x / 255 * 2 - 1
+        self.ada_avg_pool2d(x)
         x = self.bn_input(x)
-        x = self.ada_avg_pool2d(x)
-        x = self.conv1(F.dropout2d(x,p = 0.01, training=self.training))
-        x = self.conv2(F.dropout(x,p = 0.01, training=self.training))
-        x = self.conv3(F.dropout(x,p = 0.1, training=self.training))
-        x = self.conv4(F.dropout2d(x,p = 0.3, training=self.training))
-        x = self.conv5(F.dropout(x,p = 0.5, training=self.training))
+        x = self.conv1(F.dropout2d(x,p = 0, training=self.training))
+        x = self.conv2(F.dropout(x,p = 0, training=self.training))
+        x = self.conv3(F.dropout(x,p = 0, training=self.training))
+        x = self.conv4(F.dropout2d(x,p = 0, training=self.training))
+        x = self.conv5(F.dropout(x,p = 0.2, training=self.training))
         # normalize x from [min(x), max(x)] to [0,1]
         # x = x - x.min()
         # x = x / (x.max() - x.min())
