@@ -6,15 +6,15 @@ data:
     output_dir: "output/pure_exp22_best"
 
 optimizer:
-    batch_size: 10
-    lr: 0.01
+    batch_size: 600
+    lr: 0.1
     max_epochs: 1000
     patience: 250
     decrease_lr: True
-    lr_decay: 0.3
-    lr_decay_epochs: [300, 400, 600]
+    lr_decay: 0.6
+    lr_decay_epochs: [50,100,300, 400, 600]
 
-create_new_dataset: False
+create_new_dataset: True
 dataset_creator_N: 600
 dataset_creator_augmentation: False
 

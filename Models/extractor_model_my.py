@@ -57,7 +57,6 @@ class Extractor(nn.Module):
         m_st = (1,1) # max pooling stride
 
         alpha_elu = 1.0 # ELU alpha
-        self.ada_avg_pool2d = nn.AdaptiveAvgPool2d(output_size=(192, 128))
 
         # convolutional layers
         # 192 x 128
@@ -78,7 +77,6 @@ class Extractor(nn.Module):
     def forward(self, x):
         # normalization to [-1, 1]
         # x = x / 255 * 2 - 1
-        x = self.ada_avg_pool2d(x)
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)

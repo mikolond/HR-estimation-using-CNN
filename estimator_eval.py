@@ -94,7 +94,7 @@ class EstimatorEval:
                 predicted.append(prediction)
                 progress = data_loader.get_progress()
                 print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
-                # get_max_freq_padded(extractor_output, 30, hr_data, prediction, pad_factor=10)
+                get_max_freq_padded(extractor_output, 30, hr_data, prediction, pad_factor=10)
 
         return ground_truth, predicted
     
@@ -175,11 +175,12 @@ def plot_pearson(ground_truth, predicted, save_path, tag):
 
 def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
     global plot_counter
-    plt.figure()
+    plt.figure(figsize=(8,3))
     plt.plot(sequence)
     plt.title("Sequence")
-    plt.xlabel("Frame")
+    plt.xlabel("Frame number")
     plt.ylabel("Amplitude")
+    plt.tight_layout()
     plt.savefig(os.path.join(save_path, "sequence.png"))
     plt.close()
     plt.figure()
@@ -253,7 +254,7 @@ if __name__ == "__main__":
 
 
     device = input("Device to train on: ")
-    if not torch.cuda.is_available():
+    if not torch.cuda.is_available() or device == "cpu":
         device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + device)
