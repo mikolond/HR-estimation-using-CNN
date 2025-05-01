@@ -2,7 +2,8 @@ import torch
 from Models.estimator_model import Estimator
 # from Models.extractor_latent3 import Extractor
 # from Models.extractor_latent import Extractor
-from Models.extractor_model_my import Extractor
+# from Models.extractor_model_my import Extractor
+from Models.extractor_model import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
@@ -87,8 +88,8 @@ class EstimatorEval:
                 extractor_output = self.infer_extractor(sequence)
                 # print("extractor_output shape:",extractor_output.shape)
                 # print("extractor_output:",extractor_output)
-                # prediction = self.infer(extractor_output) * 60
-                prediction = get_max_freq_padded(extractor_output, 30, hr_data, 0, pad_factor=10) * 60
+                prediction = self.infer(extractor_output) * 60
+                # prediction = get_max_freq_padded(extractor_output, 30, hr_data, 0, pad_factor=10) * 60
                 epoch_done = not data_loader.next_sequence()
                 ground_truth.append(hr_data)
                 predicted.append(prediction)
@@ -204,7 +205,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_exp22.yaml"))
+    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_exp24.yaml"))
     data = config_data["data"]
     weights = config_data["weights"]
     extractor_weights_path = weights["extractor_weights"]
