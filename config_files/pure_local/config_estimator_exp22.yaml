@@ -14,7 +14,7 @@ optimizer:
     lr_decay: 0.6
     lr_decay_epochs: [50,100,300, 400, 600]
 
-create_new_dataset: True
+create_new_dataset: False
 dataset_creator_N: 600
 dataset_creator_augmentation: False
 

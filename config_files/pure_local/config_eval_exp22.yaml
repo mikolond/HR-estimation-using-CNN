@@ -1,7 +1,7 @@
 data:
     benchmark: "benchmarks/benchmark_pure.yaml"
     dataset_dir: "datasets/dataset_pure"
-    output_dir: "output/pure_exp22_best"
+    output_dir: "output/pure_exp22_best_fft"
 
 weights:
     extractor_weights: "output/pure_exp22/best_extractor_weights.pth"

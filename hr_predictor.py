@@ -185,9 +185,9 @@ class HRPredictor:
 if __name__ == '__main__':
     predictor = HRPredictor()
     predictor.set_device(torch.device('cuda'))
-    extractor_weights_path = os.path.join("output","weights","pure_decreasing","best_extractor_weights.pth")
+    extractor_weights_path = os.path.join("output","pure_exp22","best_extractor_weights.pth")
     predictor.load_extractor_weights(extractor_weights_path)
-    estimator_weights_path = os.path.join("output","estimator_pure_weights_150","best_model.pth")
+    estimator_weights_path = os.path.join("output","pure_exp22_best","best_estimator_weights.pth")
     predictor.load_estimator_weights(estimator_weights_path)
     video_path = "test_videos/me_150-120bom_1minut.mp4"
     predictions = predictor.process_video(video_path, 300)

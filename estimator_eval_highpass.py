@@ -11,6 +11,22 @@ import matplotlib.pyplot as plt
 import time
 plot_counter = 0
 
+def high_pass_filter(signal, fs, cutoff=0.667):
+    """
+    First-order high-pass filter (time domain) using NumPy.
+    signal: 1D numpy array
+    fs: Sampling frequency in Hz
+    cutoff: Cutoff frequency in Hz (e.g., 0.667 Hz for 40 bpm)
+    """
+    rc = 1 / (2 * np.pi * cutoff)
+    alpha = rc / (rc + 1/fs)
+
+    filtered = np.zeros_like(signal)
+    filtered[0] = signal[0]
+    for i in range(1, len(signal)):
+        filtered[i] = alpha * (filtered[i-1] + signal[i] - signal[i-1])
+    return filtered
+
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
     statistics = {}
@@ -85,16 +101,20 @@ class EstimatorEval:
                 hr_data = data_loader.get_hr()
 
                 extractor_output = self.infer_extractor(sequence)
+                # normalize the output to [-1, 1]
+                extractor_output = extractor_output - np.mean(extractor_output)
+                extractor_output = extractor_output / (np.max(extractor_output) - np.min(extractor_output))
+                extractor_output = high_pass_filter(extractor_output, 30, cutoff=0.6)
                 # print("extractor_output shape:",extractor_output.shape)
                 # print("extractor_output:",extractor_output)
-                # prediction = self.infer(extractor_output) * 60
-                prediction = get_max_freq_padded(extractor_output, 30, hr_data, 0, pad_factor=10) * 60
+                prediction = self.infer(extractor_output) * 60
+                # prediction = get_max_freq_padded(extractor_output, 30, hr_data, 0, pad_factor=10) * 60
                 epoch_done = not data_loader.next_sequence()
                 ground_truth.append(hr_data)
                 predicted.append(prediction)
                 progress = data_loader.get_progress()
                 print(f"Progress: {progress[0]}/{progress[1]}", end="\r")
-                # get_max_freq_padded(extractor_output, 30, hr_data, prediction, pad_factor=10)
+                get_max_freq_padded(extractor_output, 30, hr_data, prediction, pad_factor=10)
 
         return ground_truth, predicted
     
