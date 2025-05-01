@@ -8,7 +8,7 @@ from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from extractor_trainer import ExtractorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthetic.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp25.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp26.yaml")
 # CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_exp22_better.yaml")
 # CONFIG_PATH = os.path.join("config_files", "latent_model_test", "config_extractor_pure_halmos_latent4_exp1.yaml")
 
