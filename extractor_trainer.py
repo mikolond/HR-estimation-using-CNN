@@ -70,7 +70,6 @@ class ExtractorTrainer:
     def train(self):
         # path_to_save = os.path.join(self.weights_path, "model_epoch_-1.pth")
         # torch.save(self.model.state_dict(), path_to_save)
-        print("training parameters:", "batch size:", self.batch_size, "learning rate:", self.learning_rate, "num epochs:", self.num_epochs, "cumulative batch size:", self.cum_batch_size,"lr decay:", self.lr_decay, "decay rate:", self.decay_rate, "decay epchs:", self.decay_rate, "N:", self.training_sequence_length, "delta:", self.hr_data["delta"], self.hr_data["f_range"], self.hr_data["sampling_f"])
         #  create another folder for model weights
         best_valid_loss = float("inf")
         epochs_without_improvement = 0

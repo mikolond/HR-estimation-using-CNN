@@ -9,9 +9,9 @@ from extractor_trainer import ExtractorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthetic.yaml")
 # CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp24.yaml")
-# CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_local.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_local.yaml")
 # CONFIG_PATH = os.path.join("config_files", "latent_model_test", "config_extractor_pure_halmos_latent4_exp1.yaml")
-CONFIG_PATH = os.path.join("config_files", "3dconv_model", "config_extractor_pure_halmos_3dconv_exp1.yaml")
+# CONFIG_PATH = os.path.join("config_files", "3dconv_model", "config_extractor_pure_halmos_3dconv_exp1.yaml")
 
 
 if __name__ == "__main__":
@@ -88,4 +88,11 @@ if __name__ == "__main__":
     if config_data["load_model"]:
         if os.path.exists(config_data["load_model_path"]):
             trainer.load_model(config_data["load_model_path"])
+    print("Training started")
+    print("Model:", config_data["extractor_model_path"])
+    print("Output path:", output_path)
+    print("optimizer stats:", optimizer)
+    print("train stats:", train)
+    print("valid stats:", valid)
+
     trainer.train()
