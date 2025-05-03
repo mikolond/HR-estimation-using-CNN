@@ -1,13 +1,13 @@
 data:
     benchmark: "benchmarks/benchmark_pure.yaml"
     dataset_dir: "/mnt/data_personal/mikolond/datasets/pure_extractor_dataset"
-    output_dir: "output/pure_3dconv_exp1/"
+    output_dir: "output/pure_latent4_exp3/"
 
-extractor_model_path: "Models/extractor_3dconv.py"
+extractor_model_path: "Models/extractor_latent4.py"
 
 optimizer:
     batch_size: 1
-    cumulative_batch_size: 50
+    cumulative_batch_size: 100
     lr: 1e-3
     max_epochs: 600
     patience: 150

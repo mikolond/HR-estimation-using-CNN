@@ -9,15 +9,15 @@ extractor_model_path: "Models/extractor_model.py"
 estimator_model_path: "Models/estimator_model.py"
 
 optimizer:
-    batch_size: 800
+    batch_size: 600
     lr: 0.1
     max_epochs: 5000
-    patience: 1000
+    patience: 800
     decrease_lr: True
     lr_decay: 0.3
     lr_decay_epochs: [50,100]
 
-create_new_dataset: True
+create_new_dataset: False
 dataset_creator_N: 600
 dataset_creator_augmentation: False
 
