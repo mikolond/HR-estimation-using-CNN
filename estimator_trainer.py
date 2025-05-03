@@ -1,6 +1,4 @@
 import torch
-from Models.estimator_model import Estimator
-# from Models.estimator_model_spetlik import Estimator
 from Loss.estimator_loss import EstimatorLoss
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import matplotlib.pyplot as plt
@@ -8,12 +6,13 @@ import numpy as np
 import os
 import time
 import csv
+from utils import load_model_class
 
 DEBUG = False
 
 
 class EstimatorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, lr = 0.01, batch_size=1, num_epochs = 5, best_model_path = None, output_path = None):
+    def __init__(self, train_data_loader, valid_data_loader, device, estimator_model_path, lr = 0.01, batch_size=1, num_epochs = 5, best_model_path = None, output_path = None):
         self.train_data_loader = train_data_loader
         self.valid_data_loader = valid_data_loader
         self.device = device
@@ -24,7 +23,7 @@ class EstimatorTrainer:
         if not os.path.exists(self.best_model_path):
             os.makedirs(self.best_model_path)
         self.best_loss = float("inf")
-
+        Estimator = load_model_class(estimator_model_path, "Estimator") 
         self.model = Estimator()
         # self.model.setup()
         self.model.to(device)

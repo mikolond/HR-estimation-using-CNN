@@ -22,6 +22,13 @@ if __name__ == "__main__":
     # Load the YAML file
     config_data = yaml.safe_load(open(CONFIG_PATH, "r"))
     data = config_data["data"]
+    extractor_model_path = config_data["extractor_model_path"]
+    if not os.path.exists(extractor_model_path):
+        raise Exception("Extractor model path does not exist")
+    
+    estimator_model_path = config_data["estimator_model_path"]
+    if not os.path.exists(estimator_model_path):
+        raise Exception("Estimator model path does not exist")
 
     device = input("Device to train on: ")
     if not torch.cuda.is_available() or device == "cpu":
@@ -40,7 +47,7 @@ if __name__ == "__main__":
         dataset_creator_N = config_data["dataset_creator_N"]
         augmentation = config_data["dataset_creator_augmentation"]
         # create dataset_creator
-        dataset_creator = DatasetCreator(extractor_weights_path, device, extractor_dataset_path, estimator_dataset_path, dataset_creator_N, augmentation)
+        dataset_creator = DatasetCreator(extractor_weights_path, device, extractor_dataset_path, estimator_dataset_path, dataset_creator_N, extractor_model_path, augmentation)
         # create dataset
         dataset_creator.create_dataset()
     else:
@@ -99,7 +106,8 @@ if __name__ == "__main__":
     lr_decay_epochs = optimizer["lr_decay_epochs"]
 
 
-    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, batch_size=batch_size, num_epochs=max_epochs, lr=lr, best_model_path=output_path, output_path=output_path)
+
+    trainer = EstimatorTrainer(train_data_loader, valid_data_loader, device, estimator_model_path, batch_size=batch_size, num_epochs=max_epochs, lr=lr, best_model_path=output_path, output_path=output_path)
     load_model = config_data["load_model"]
     if load_model:
         model_path = config_data["load_model_path"]

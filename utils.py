@@ -9,11 +9,3 @@ def load_model_class(file_path: str, class_name: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return getattr(module, class_name)
-
-
-file_path  = "Models/extractor_model.py"
-class_name = "Extractor"
-
-Extractor = load_model_class(file_path, class_name)
-# create model
-model = Extractor()

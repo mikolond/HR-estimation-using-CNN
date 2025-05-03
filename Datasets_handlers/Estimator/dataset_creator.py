@@ -1,14 +1,13 @@
-from Models.extractor_model import Extractor
-# from Models.extractor_model_my import Extractor
-# from Models.extractor_latent3 import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import torch
 import numpy as np
 import os
 import csv
+from utils import load_model_class
 
 class DatasetCreator:
-    def __init__(self, weights_path, device, source_path, dest_path,N, augmentation=False):
+    def __init__(self, weights_path, device, source_path, dest_path, N, extractor_model_path, augmentation=False):
+        Extractor = load_model_class(extractor_model_path, "Extractor")
         self.model = Extractor().to(device)
         if os.path.exists(weights_path):
             self.model.load_state_dict(torch.load(weights_path, map_location=device))

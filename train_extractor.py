@@ -8,9 +8,10 @@ from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from extractor_trainer import ExtractorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthetic.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp26.yaml")
-# CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_exp22_better.yaml")
+# CONFIG_PATH = os.path.join("config_files", "pure", "config_extractor_pure_halmos_exp24.yaml")
+# CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_local.yaml")
 # CONFIG_PATH = os.path.join("config_files", "latent_model_test", "config_extractor_pure_halmos_latent4_exp1.yaml")
+CONFIG_PATH = os.path.join("config_files", "3dconv_model", "config_extractor_pure_halmos_3dconv_exp1.yaml")
 
 
 if __name__ == "__main__":
@@ -63,7 +64,9 @@ if __name__ == "__main__":
     f_range = np.array(hr_data["frequency_range"])/60
     sampling_f = hr_data["sampling_frequency"]/60
     hr_data = {"delta": delta, "f_range": f_range, "sampling_f": sampling_f}
-
+    model_path = config_data["extractor_model_path"]
+    if not os.path.exists(model_path):
+        raise Exception("Model path does not exist")
 
     # load data for training
     lr = float(optimizer["lr"])
@@ -79,7 +82,7 @@ if __name__ == "__main__":
         device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + device)
-    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, output_path=output_path, learning_rate=lr, batch_size=batch_size, 
+    trainer = ExtractorTrainer(train_data_loader, valid_data_loader, device, model_path, output_path=output_path, learning_rate=lr, batch_size=batch_size, 
                                num_epochs=num_epochs, patience = patience, N=train_sequence_length, hr_data=hr_data, cum_batch_size=cum_batch_size, 
                                lr_decay=lr_decay, decay_rate=decrease_lr, decay_epochs=lr_decay_epochs, weights_path = output_path)
     if config_data["load_model"]:

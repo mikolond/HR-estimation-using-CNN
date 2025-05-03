@@ -1,7 +1,4 @@
 import torch
-from Models.extractor_model import Extractor
-# from Models.extractor_model_my import Extractor
-# from Models.extractor_latent4 import Extractor
 from Loss.extractor_loss import ExtractorLoss
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import matplotlib.pyplot as plt
@@ -9,12 +6,13 @@ import numpy as np
 import time
 import os
 import csv
+from utils import load_model_class
 
 
 DEBUG = False
 
 class ExtractorTrainer:
-    def __init__(self, train_data_loader, valid_data_loader, device, output_path=None, learning_rate=0.0001, batch_size=1, num_epochs=100, patience = 30, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1], weights_path = None):
+    def __init__(self, train_data_loader, valid_data_loader, device, model_path, output_path=None, learning_rate=0.0001, batch_size=1, num_epochs=100, patience = 30, debug=False, N=100, hr_data=None, cum_batch_size=1, lr_decay = False, decay_rate = 0.5, decay_epochs = [1], weights_path = None):
         if hr_data is not None:
             self.hr_data = hr_data
         else:
@@ -31,6 +29,7 @@ class ExtractorTrainer:
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.debug = debug
+        Extractor = load_model_class(model_path, "Extractor")
         self.model = Extractor().to(self.device)
         self.loss_fc = ExtractorLoss().to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
