@@ -1,16 +1,13 @@
 import torch
-from Models.estimator_model import Estimator
-# from Models.extractor_latent3 import Extractor
-# from Models.extractor_latent import Extractor
-# from Models.extractor_model_my import Extractor
-from Models.extractor_model import Extractor
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
-from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 import time
+from utils import load_model_class
 plot_counter = 0
+
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_eval_exp25_estim2.yaml")
 
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
@@ -39,10 +36,11 @@ def get_statistics(data_loader):
     return statistics
 
 class EstimatorEval:
-    def __init__(self, extractor_model, extractor_weights_path, estimator_weights_path, device, N, output_path):
+    def __init__(self, extractor_model, extractor_weights_path, estimator_weights_path, device, N, output_path, estimator_model_path):
         self.output_path = output_path
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
+        Estimator = load_model_class(estimator_model_path, "Estimator")
         self.model = Estimator().to(device)
         self.extractor_model = extractor_model.to(device)
         self.extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
@@ -205,7 +203,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 if __name__ == "__main__":
     import yaml
     import csv
-    config_data = yaml.safe_load(open("config_files/pure_local/config_eval_exp24.yaml"))
+    config_data = yaml.safe_load(open(CONFIG_PATH, "r"))
     data = config_data["data"]
     weights = config_data["weights"]
     extractor_weights_path = weights["extractor_weights"]
@@ -260,10 +258,14 @@ if __name__ == "__main__":
     else:
         device = torch.device("cuda:" + device)
     # device = torch.device("cpu")
+
+    extractor_model_path = config_data["extractor_model_path"]
+    estimator_model_path = config_data["estimator_model_path"]
+    Extractor = load_model_class(extractor_model_path, "Extractor")
     extractor_model = Extractor()
     extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
 
-    evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, seq_length, output_path)
+    evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, seq_length, output_path, estimator_model_path)
     print("evaluating train data")
     loss = evaluator.evaluate(train_data_loader, tag = "train")
     print("train loss:", loss)

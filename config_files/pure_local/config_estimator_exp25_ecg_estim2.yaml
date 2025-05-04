@@ -3,19 +3,19 @@ data:
     extractor_dataset_dir: "datasets/dataset_ecg_fitness"
     extractor_weights: "output/pure_exp25/best_extractor_weights.pth"
     estimator_dataset_dir: "datasets/estimator_ecg_exp25"
-    output_dir: "output/ecg_exp25"
+    output_dir: "output/ecg_exp25_estim2"
 
 extractor_model_path: "Models/extractor_model.py"
-estimator_model_path: "Models/estimator_model.py"
+estimator_model_path: "Models/estimator_model2.py"
 
 optimizer:
     batch_size: 600
-    lr: 0.1
+    lr: 0.01
     max_epochs: 5000
-    patience: 250
+    patience: 400
     decrease_lr: True
-    lr_decay: 0.3
-    lr_decay_epochs: [50]
+    lr_decay: 0.5
+    lr_decay_epochs: [50, 100]
 
 create_new_dataset: False
 dataset_creator_N: 600

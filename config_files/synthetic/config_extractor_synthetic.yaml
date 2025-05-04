@@ -3,6 +3,8 @@ data:
     dataset_dir: "datasets/dataset_synthetic/"
     output_dir: "output/synthetic_new2/"
 
+extractor_model_path: "Models/extractor_model_segment.py"
+
 optimizer:
     batch_size: 1
     cumulative_batch_size: 30

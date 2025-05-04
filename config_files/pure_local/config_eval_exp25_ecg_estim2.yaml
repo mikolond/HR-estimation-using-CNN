@@ -1,0 +1,15 @@
+data:
+    benchmark: "benchmarks/benchmark_ecg2.yaml"
+    dataset_dir: "datasets/dataset_ecg_fitness"
+    output_dir: "output/ecg_exp25_estim2"
+
+extractor_model_path: "Models/extractor_model.py"
+estimator_model_path: "Models/estimator_model2.py"
+
+weights:
+    extractor_weights: "output/pure_exp25/best_extractor_weights.pth"
+    estimator_weights: "output/ecg_exp25_estim2/best_estimator_weights.pth"
+
+dataset_options:
+    sequence_length: 300
+    shift: 300

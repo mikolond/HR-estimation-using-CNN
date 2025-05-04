@@ -9,10 +9,10 @@ extractor_model_path: "Models/extractor_model.py"
 estimator_model_path: "Models/estimator_model.py"
 
 optimizer:
-    batch_size: 600
+    batch_size: 800
     lr: 0.1
     max_epochs: 5000
-    patience: 1000
+    patience: 250
     decrease_lr: True
     lr_decay: 0.3
     lr_decay_epochs: [50,100]

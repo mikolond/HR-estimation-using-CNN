@@ -69,3 +69,20 @@ if __name__ == "__main__":
     dim2 = get_dims(dim2, 9, 1, 0)
 
     print("layer 1: ", dim1, dim2)  
+    # dim1 = 300
+    # dim1 = get_dims(dim1, 6, 1, 0)
+    # dim1 = get_dims(dim1, 6, 1, 0)
+    # dim1 = get_dims(dim1, 12, 1, 0)
+    # dim1 = get_dims(dim1, 12, 2, 0)
+    # dim1 = get_dims(dim1, 24, 1, 0)
+    # print("layer 5: ", dim1)
+    # dim1 = get_dims(dim1, 50, 1, 0)
+    # print("layer 6: ", dim1)
+    # dim1 = get_dims(dim1, 50, 1, 0)
+    # print("layer 7: ", dim1)
+    # dim1 = get_dims(dim1, 50, 1, 0)
+    # print("layer 8: ", dim1)
+    # dim1 = get_dims(dim1, 6, 1, 0)
+    # print("layer 9: ", dim1)
+
+
