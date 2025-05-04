@@ -7,7 +7,7 @@ import time
 from utils import load_model_class
 plot_counter = 0
 
-CONFIG_PATH = os.path.join("config_files", "pure_local", "config_eval_exp25_estim2.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_eval_exp25.yaml")
 
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''

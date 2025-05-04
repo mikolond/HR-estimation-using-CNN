@@ -4,7 +4,7 @@ data:
     output_dir: "output/pure_exp25"
 
 extractor_model_path: "Models/extractor_model.py"
-estimator_model_path: "Models/estimator_model.py"
+estimator_model_path: "Models/estimator_model3.py"
 
 weights:
     extractor_weights: "output/pure_exp25/best_extractor_weights.pth"

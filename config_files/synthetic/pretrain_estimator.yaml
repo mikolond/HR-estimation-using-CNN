@@ -1,12 +1,12 @@
 data:
-    benchmark: "benchmarks/benchmark_pure_split2.yaml"
+    benchmark: "benchmarks/benchmark_pretrain_estim.yaml"
     extractor_dataset_dir: "datasets/dataset_pure"
     extractor_weights: "output/pure_exp25/best_extractor_weights.pth"
-    estimator_dataset_dir: "datasets/estimator_pure_exp25"
-    output_dir: "output/pure_exp25"
+    estimator_dataset_dir: "datasets/freq_preset"
+    output_dir: "output/freq_preset"
 
 extractor_model_path: "Models/extractor_model.py"
-estimator_model_path: "Models/estimator_model.py"
+estimator_model_path: "Models/estimator_model3.py"
 
 optimizer:
     batch_size: 600

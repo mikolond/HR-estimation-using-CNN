@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.transforms import Resize
+from torchvision.transforms import InterpolationMode
 
 def create_layer(params):
     layer = []
@@ -59,9 +61,6 @@ class Extractor(nn.Module):
 
         alpha_elu = 1.0 # ELU alpha
 
-        self.ada_avg_pool1 = nn.AdaptiveAvgPool2d((54,37))
-        self.ada_maxpool1 = nn.AdaptiveMaxPool2d((54,37))
-        self.ada_maxpool2 = nn.AdaptiveMaxPool2d((54,37))
 
         # 192 x 128
         self.bn_input = nn.BatchNorm2d(in_ch)
@@ -70,7 +69,7 @@ class Extractor(nn.Module):
         # 89 x 60
         self.conv2 = create_layer(["CONV",ch1, ch1, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch1,"ELU", alpha_elu])
         # 38 x 26
-        self.conv3 = create_layer(["CONV",ch1+9, ch2, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
+        self.conv3 = create_layer(["CONV",ch1+3, ch2, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
         # 13 x 9
         self.conv4 = create_layer(["CONV",ch2, ch2, c_k_last_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
         # 1 x 1
@@ -84,21 +83,19 @@ class Extractor(nn.Module):
         # normalization to [-1, 1]
         x = x / 255 * 2 - 1
         x = self.bn_input(x)
-        x1 = self.ada_avg_pool1(x)
-        x2 = self.ada_maxpool1(x)
-        x3 = -self.ada_maxpool2(-x)
+        x1 = Resize((54,37))(x)
         # print("after avg pool",x1.shape)
-        x = self.conv0(F.dropout2d(x,p = 0, training=self.training))
+        x = self.conv0(F.dropout2d(x,p = 0.3, training=self.training))
         # print("after conv0",x.shape)
-        x = self.conv1(F.dropout2d(x,p = 0, training=self.training))
+        x = self.conv1(F.dropout2d(x,p = 0.1, training=self.training))
         # print("after conv1",x.shape)
-        x = self.conv2(F.dropout(x,p = 0, training=self.training))
+        x = self.conv2(F.dropout(x,p = 0.1, training=self.training))
         # print("after conv2",x.shape)
-        x = torch.cat((x1,x2,x3,x),1)
+        x = torch.cat((x1,x),1)
         # print("after cat",x.shape)
-        x = self.conv3(F.dropout(x,p = 0, training=self.training))
+        x = self.conv3(F.dropout(x,p = 0.2, training=self.training))
         # print("after conv3",x.shape)
-        x = self.conv4(F.dropout2d(x,p = 0.2, training=self.training))
+        x = self.conv4(F.dropout2d(x,p = 0.3, training=self.training))
         # print("after conv4",x.shape)
         x = self.conv5(F.dropout(x,p = 0.5, training=self.training))
         # print("after conv5",x.shape)

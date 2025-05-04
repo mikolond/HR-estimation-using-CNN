@@ -28,13 +28,13 @@ class EstimatorTrainer:
         # self.model.setup()
         self.model.to(device)
         # init optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(),amsgrad=True, lr=self.lr, weight_decay=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(),amsgrad=False, lr=self.lr, weight_decay=0.0001)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=0.01)
         # init loss function
         # self.criterion = EstimatorLoss().to(device)
         # self.criterion = PearsonLoss().to(device)
-        self.criterion = torch.nn.MSELoss().to(device)
-        # self.criterion = torch.nn.L1Loss().to(device)
+        # self.criterion = torch.nn.MSELoss().to(device)
+        self.criterion = torch.nn.L1Loss().to(device)
         self.output_path = output_path
 
         self.lr_decay = False
