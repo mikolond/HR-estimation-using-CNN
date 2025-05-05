@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.transforms import Resize
-from torchvision.transforms import InterpolationMode
 
 def create_layer(params):
     layer = []
