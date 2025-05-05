@@ -3,7 +3,7 @@ data:
     dataset_dir: "/mnt/data_personal/mikolond/datasets/pure_extractor_dataset"
     output_dir: "output/pure_exp24/"
 
-model_path: "Models/extractor_model.py"
+extractor_model_path: "Models/extractor_model.py"
 
 optimizer:
     batch_size: 1
