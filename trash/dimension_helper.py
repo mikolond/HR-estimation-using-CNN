@@ -57,13 +57,13 @@ if __name__ == "__main__":
 
     print("layer 5: ", dim1, dim2)
 
-    dim1 = 300
-    dim2 = 20
+    dim1 = 82
+    dim2 = 55
 
 
-    dim1 = get_dims(dim1, 11, 1, 5)
-    dim2 = get_dims(dim2, 12, 1, 0)
-    print("layer 0: ", dim1, dim2)
+    dim1 = get_dims(dim1, 5, 3, 0)
+    dim2 = get_dims(dim2, 3, 3, 1)
+    print("layer cat: ", dim1, dim2)
 
     dim1 = get_dims(dim1, 9, 1, 4)
     dim2 = get_dims(dim2, 9, 1, 0)

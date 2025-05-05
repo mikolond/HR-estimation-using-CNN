@@ -3,17 +3,17 @@ data:
     extractor_dataset_dir: "datasets/dataset_pure"
     extractor_weights: "output/pure_exp24/best_extractor_weights.pth"
     estimator_dataset_dir: "datasets/estimator_pure_exp24"
-    output_dir: "output/pure_exp24"
+    output_dir: "output/pure_exp24_pretrained"
 
 extractor_model_path: "Models/extractor_model.py"
-estimator_model_path: "Models/estimator_model.py"
+estimator_model_path: "Models/estimator_model2.py"
 
 optimizer:
     batch_size: 600
-    lr: 0.1
+    lr: 0.01
     max_epochs: 5000
-    patience: 800
-    decrease_lr: True
+    patience: 250
+    decrease_lr: False
     lr_decay: 0.3
     lr_decay_epochs: [50,100]
 
@@ -23,7 +23,7 @@ dataset_creator_augmentation: False
 
 train:
     sequence_length: 300
-    shift: 20
+    shift: 300
 
 valid:
     sequence_length: 300
@@ -31,5 +31,5 @@ valid:
 
 epochs_to_new_dataset: 100
 
-load_model: False
-load_model_path: "output/weights/synthetic/extractor/epoch_150.pth"
+load_model: True
+load_model_path: "output/freq_preset/best_estimator_weights.pth"

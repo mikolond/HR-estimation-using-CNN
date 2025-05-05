@@ -30,7 +30,7 @@ def create_dataset(path, f_min, f_max, f_s, length):
         print(f"File {f} created")
 
     # create data.csv file with all filename in 0 groups randomly organised
-    arr = np.arange(30, 241) 
+    arr = np.arange(f_min, f_max) 
     groups = 10
     in_the_group = len(arr) // groups
     filepath = os.path.join(path, "data.csv")
@@ -61,7 +61,7 @@ def create_dataset(path, f_min, f_max, f_s, length):
 if __name__ == "__main__":
     path = "datasets/freq_preset"
     f_min = 30
-    f_max = 241
+    f_max = 251
     f_s = 30
     length = 300
     create_dataset(path, f_min, f_max, f_s, length)
