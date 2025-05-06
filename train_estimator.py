@@ -3,24 +3,19 @@ import csv
 import os
 import numpy as np
 import torch
-torch.manual_seed(0)
+torch.manual_seed(222999)
 
 from Datasets_handlers.Estimator.dataset_creator import DatasetCreator
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
-
-from estimator_trainer import EstimatorTrainer
+from Trainers.estimator_trainer import EstimatorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "pretrain_estimator.yaml")
 CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_exp24_ecg.yaml")
-
-
-
 # CONFIG_PATH = os.path.join("config_files", "estimator_augment.yaml")
 
-
-if __name__ == "__main__":
+def train_estimator(config_path):
     # Load the YAML file
-    config_data = yaml.safe_load(open(CONFIG_PATH, "r"))
+    config_data = yaml.safe_load(open(config_path, "r"))
     data = config_data["data"]
     extractor_model_path = config_data["extractor_model_path"]
     if not os.path.exists(extractor_model_path):
@@ -39,7 +34,7 @@ if __name__ == "__main__":
     estimator_dataset_path = data["estimator_dataset_dir"]
     create_new_dataset = config_data["create_new_dataset"]
     if not os.path.exists(estimator_dataset_path) or create_new_dataset:
-        # if estimator dataet does not exist, create it
+        # if estimator dataset does not exist, create it
         extractor_dataset_path = data["extractor_dataset_dir"]
         if not os.path.exists(extractor_dataset_path):
             raise Exception("Extractor and Estimator datasets does not exist")
@@ -119,3 +114,7 @@ if __name__ == "__main__":
 
     trainer.train()
 
+
+
+if __name__ == "__main__":
+    train_estimator(CONFIG_PATH)

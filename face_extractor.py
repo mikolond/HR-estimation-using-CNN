@@ -21,14 +21,14 @@ class FaceExtractor:
             bb = np.array([self.previous_bb[0] + self.previous_bb_move_vector[0], self.previous_bb[1] + self.previous_bb_move_vector[1],
                     self.previous_bb[2] + self.previous_bb_move_vector[0], self.previous_bb[3] + self.previous_bb_move_vector[1]]).astype(int)
             print("no face detected, using previous bb")
-            print("bb:",bb)
+            # print("bb:",bb)
             bb_origin = [bb[0], bb[1]]
             bb_width = bb[2] - bb[0]
             bb_height = bb[3] - bb[1]
         else:
             bb = detection_result[0].bbox.astype(int)
-            print("face detected")
-            print("bb:",bb)
+            # print("face detected")
+            # print("bb:",bb)
             bb_origin = [bb[0], bb[1]]
             bb_width = bb[2] - bb[0]
             bb_height = bb[3] - bb[1]
@@ -40,6 +40,11 @@ class FaceExtractor:
         bb_ratio = 3/2
         bb_height_new =bb_ratio * bb_width
         height_difference = bb_height_new - bb_height
+        # expand the box by 20% in all directions for the uncertainty of the face detection
+        bb_width = int(bb_width * 1.2)
+        bb_height = int(bb_height * 1.2)
+        bb_origin[0] = int(bb_origin[0] - bb_width * 0.1)
+        bb_origin[1] = int(bb_origin[1] - bb_height * 0.1)
 
         pt1 = (int(bb_origin[0]), int(bb_origin[1]-height_difference/2))
         pt2 = (int(bb_origin[0]+bb_width), int(bb_origin[1]+bb_height+height_difference/2))

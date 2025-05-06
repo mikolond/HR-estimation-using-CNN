@@ -6,6 +6,7 @@ import numpy as np
 import os
 import cv2
 import matplotlib.pyplot as plt
+import time
 
 
 DEBUG = True
@@ -117,17 +118,24 @@ class HRPredictor:
     
     def load_n_faces(self, n):
         faces = []
-        for _ in range(n):
+        i = 0
+        while True:
             frame = self.get_frame()
+            # rotate frame 90 degrees anti-clockwise
+            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            # cv2.imwrite("frame.png", frame)
             if frame is None:
                 break
             face = self.get_face(frame)
-            if face is None:
-                break
+            if face is None and i == 0:
+                i = -1
             # Optionally, save a sample face to verify the output
-            cv2.imwrite("face.png", face)
+            # cv2.imwrite("face.png", face)
             faces.append(face)
-            print("Collected face with shape:", face.shape)
+            # print("Collected face with shape:", face.shape)
+            i += 1
+            if i >= n:
+                break
         faces = np.array(faces)
         print("Final faces array shape:", faces.shape)
         return faces
@@ -185,10 +193,10 @@ class HRPredictor:
 if __name__ == '__main__':
     predictor = HRPredictor()
     predictor.set_device(torch.device('cuda'))
-    extractor_weights_path = os.path.join("output","pure_exp22","best_extractor_weights.pth")
+    extractor_weights_path = os.path.join("output","pure_exp24","best_extractor_weights.pth")
     predictor.load_extractor_weights(extractor_weights_path)
-    estimator_weights_path = os.path.join("output","pure_exp22_best","best_estimator_weights.pth")
+    estimator_weights_path = os.path.join("output","pure_exp24_new2","best_estimator_weights.pth")
     predictor.load_estimator_weights(estimator_weights_path)
-    video_path = "test_videos/me_150-120bom_1minut.mp4"
+    video_path = "test_videos/vid2_me.mp4"
     predictions = predictor.process_video(video_path, 300)
     print(predictions)

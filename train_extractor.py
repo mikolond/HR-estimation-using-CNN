@@ -3,9 +3,10 @@ import csv
 import os
 import numpy as np
 import torch
+torch.manual_seed(222999)
 
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
-from extractor_trainer import ExtractorTrainer
+from Trainers.extractor_trainer import ExtractorTrainer
 
 CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthetic.yaml")
 # CONFIG_PATH = os.path.join("config_files", "segment_model", "config_extractor_pure_halmos_segment_exp2.yaml")
@@ -13,11 +14,9 @@ CONFIG_PATH = os.path.join("config_files", "synthetic", "config_extractor_synthe
 # CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_local.yaml")
 # CONFIG_PATH = os.path.join("config_files", "latent_model_test", "config_extractor_pure_halmos_latent4_exp3.yaml")
 # CONFIG_PATH = os.path.join("config_files", "3dconv_model", "config_extractor_pure_halmos_3dconv_exp1.yaml")
-
-
-if __name__ == "__main__":
+def train_extractor(config_path):
     # Load the YAML file
-    config_data = yaml.safe_load(open(CONFIG_PATH, "r"))
+    config_data = yaml.safe_load(open(config_path, "r"))
     data = config_data["data"]
     optimizer = config_data["optimizer"]
     hr_data = config_data["hr_data"]
@@ -97,3 +96,6 @@ if __name__ == "__main__":
     print("valid stats:", valid)
 
     trainer.train()
+
+if __name__ == "__main__":
+    train_extractor(CONFIG_PATH)
