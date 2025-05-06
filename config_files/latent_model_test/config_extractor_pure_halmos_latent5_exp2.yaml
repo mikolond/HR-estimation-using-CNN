@@ -12,8 +12,8 @@ optimizer:
     max_epochs: 600
     patience: 150
     decrease_lr: True
-    lr_decay: 0.1
-    lr_decay_epochs: [20]
+    lr_decay: 0.2
+    lr_decay_epochs: [20, 50]
 
 hr_data:
     frequency_range: [40, 240]

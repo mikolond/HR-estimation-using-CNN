@@ -3,12 +3,12 @@ data:
     dataset_dir: "datasets/dataset_synthetic/"
     output_dir: "output/synthetic_new2/"
 
-extractor_model_path: "Models/extractor_model_segment3.py"
+extractor_model_path: "Models/extractor_latent7.py"
 
 optimizer:
     batch_size: 1
     cumulative_batch_size: 30
-    lr: 1e-3
+    lr: 1e-2
     max_epochs: 40
     patience: 5
     decrease_lr: True

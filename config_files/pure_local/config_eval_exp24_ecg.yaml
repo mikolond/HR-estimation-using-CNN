@@ -1,14 +1,14 @@
 data:
-    benchmark: "benchmarks/benchmark_pure.yaml"
-    dataset_dir: "datasets/dataset_pure"
-    output_dir: "output/pure_exp24_ensambling_4"
+    benchmark: "benchmarks/benchmark_ecg2.yaml"
+    dataset_dir: "datasets/dataset_ecg_fitness"
+    output_dir: "output/ecg_exp24_new1"
 
 extractor_model_path: "Models/extractor_model.py"
 estimator_model_path: "Models/estimator_model.py"
 
 weights:
     extractor_weights: "output/pure_exp24/best_extractor_weights.pth"
-    estimator_weights: "output/pure_exp24/best_estimator_weights.pth"
+    estimator_weights: "output/ecg_exp24_new1/best_estimator_weights.pth"
 
 dataset_options:
     sequence_length: 300

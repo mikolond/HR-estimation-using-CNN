@@ -170,13 +170,13 @@ class DatasetLoader:
     def set_augmentation(self):
         # generate agumentation parameters
         # random angle
-        angle = 30
+        angle = 10
         self.augmentation_angle = random.uniform(-angle,angle)
         # random color
-        color = 30
+        color = 10
         self.augmentation_color = np.random.uniform(-color, color,3)
         # random translation
-        translation = 30
+        translation = 10
         self.augmentation_translation_x = np.random.randint(-translation, translation)
         self.augmentation_translation_y = np.random.randint(-translation, translation)
     

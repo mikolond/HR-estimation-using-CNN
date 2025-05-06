@@ -25,7 +25,7 @@ def create_dataset(path, f_min, f_max, f_s, length):
     if not os.path.exists(path):
         os.makedirs(path)
     for f in range(f_min, f_max):
-        signal = create_freq_signal(f, f_s, length, 3, 2, np.random.uniform(0, 20))
+        signal = create_freq_signal(f, f_s, length, 3, 0, np.random.uniform(0, 20))
         create_file(signal, path, str(f), f)
         print(f"File {f} created")
 
@@ -63,5 +63,5 @@ if __name__ == "__main__":
     f_min = 30
     f_max = 251
     f_s = 30
-    length = 300
+    length = 60
     create_dataset(path, f_min, f_max, f_s, length)

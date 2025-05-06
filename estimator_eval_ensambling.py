@@ -36,17 +36,20 @@ def get_statistics(data_loader):
     return statistics
 
 class EstimatorEval:
-    def __init__(self, extractor_model, extractor_weights_path, estimator_weights_path, device, N, output_path, estimator_model_path):
+    def __init__(self, extractor_model, extractor_weights_path, estimator_weights_paths, device, N, output_path, estimator_model_path):
         self.output_path = output_path
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
         Estimator = load_model_class(estimator_model_path, "Estimator")
+        self.models = []
+        for i in range(len(estimator_weights_paths)):
+            self.models.append(Estimator().to(device))
+            self.models[i].load_state_dict(torch.load(estimator_weights_paths[i], map_location=device))
+            self.models[i].eval()
         self.model = Estimator().to(device)
         self.extractor_model = extractor_model.to(device)
         self.extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
         self.extractor_model.eval()
-        self.model.eval()
-        self.model.load_state_dict(torch.load(estimator_weights_path, map_location=device))
         self.device = device
         self.N = N
 
@@ -55,7 +58,10 @@ class EstimatorEval:
         sequence = sequence.reshape(1,self.N,1).transpose(0,2,1)
         # print("sequence shape:",sequence.shape)
         x = torch.tensor(sequence).float().to(self.device)
-        output = self.model(x)
+        output = 0
+        for i in range(len(self.models)):
+            output += self.models[i](x)
+        output = output / len(self.models)
         return output.item()
     
 
@@ -264,8 +270,8 @@ if __name__ == "__main__":
     Extractor = load_model_class(extractor_model_path, "Extractor")
     extractor_model = Extractor()
     extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
-
-    evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, seq_length, output_path, estimator_model_path)
+    estimator_weights_paths = ["output/ecg_exp24_new1/best_estimator_weights.pth", "output/ecg_exp24_new2/best_estimator_weights.pth"]
+    evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_paths, device, seq_length, output_path, estimator_model_path)
     print("evaluating train data")
     loss_tr = evaluator.evaluate(train_data_loader, tag = "train")
     print("train loss:", loss_tr)
