@@ -7,6 +7,7 @@ import time
 import os
 import csv
 from utils import load_model_class
+from utils import transfer_weights
 
 
 DEBUG = False
@@ -52,8 +53,42 @@ class ExtractorTrainer:
             raise ValueError("No data in the training dataset")
         if train_data_loader.get_progress()[1] < self.cum_batch_size:
             raise ValueError("Cummulatve batch size is larger than the training dataset")
+        
+    def transfer_weights(self, model_path):
+        if not os.path.exists(model_path):
+            raise ValueError("Model path does not exist")
+        transfer_weights(model_path, self.model, self.device)
+        self.model.to(self.device)
+    
+    def make_custom_optimizer(self, layer_names_lrs: list[tuple[str, float]]):
+        params = []
+        assigned_param_names = set()
 
+        for layer_name, lr in layer_names_lrs:
+            # Collect parameters for the specified layer
+            layer_params = []
+            for name, param in self.model.named_parameters():
+                if name.startswith(layer_name + "."):  # Match layer and its sub-layers
+                    layer_params.append(param)
+                    assigned_param_names.add(name)  # Keep track of assigned params
 
+            if layer_params:
+                params.append({"params": layer_params, "lr": lr})
+
+        remaining_params = []
+        for name, param in self.model.named_parameters():
+            if name not in assigned_param_names:
+                if self.learning_rate is not None:
+                    remaining_params.append(param)
+                else:
+                    raise ValueError(
+                        f"Parameter '{name}' has no learning rate specified and "
+                        "no default learning rate provided."
+                    )
+        if remaining_params:
+            params.append({"params": remaining_params, "lr": self.learning_rate})
+
+        self.optimizer = torch.optim.Adam(params, weight_decay=1e-4)
 
     def load_model(self, model_path):
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))

@@ -197,6 +197,6 @@ if __name__ == '__main__':
     predictor.load_extractor_weights(extractor_weights_path)
     estimator_weights_path = os.path.join("output","pure_exp24_new2","best_estimator_weights.pth")
     predictor.load_estimator_weights(estimator_weights_path)
-    video_path = "test_videos/vid2_me.mp4"
+    video_path = "test_videos/me_klid_60s_60bpm.mp4"
     predictions = predictor.process_video(video_path, 300)
     print(predictions)

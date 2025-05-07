@@ -3,7 +3,6 @@ import cv2
 from insightface.app import FaceAnalysis
 import insightface
 
-
 class FaceExtractor:
     def __init__(self,input_size=(640,480)):
         self.app = FaceAnalysis(name="buffalo_sc",providers=['CUDAExecutionProvider', 'CPUExecutionProvider'], alllowed_modules=['detection'])
@@ -11,12 +10,22 @@ class FaceExtractor:
 
         self.previous_bb = None
         self.previous_bb_move_vector = None
+        self.without_detection_counter = 0
+        self.max_without_detection = 30
 
-    def extract_face(self, img):
+    def extract_face(self, img, return_bb=False):
         # img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         detection_result = self.app.get(img)
+        if len(detection_result) == 0:
+            self.without_detection_counter += 1
+        else:
+            self.without_detection_counter = 0
+        if self.without_detection_counter > self.max_without_detection:
+            self.previous_bb = None
+            self.previous_bb_move_vector = None
+            return None if not return_bb else (None, None)
         if len(detection_result) == 0 and self.previous_bb is None:
-            return None
+            return None if not return_bb else (None, None)
         elif len(detection_result) == 0 and self.previous_bb is not None:
             bb = np.array([self.previous_bb[0] + self.previous_bb_move_vector[0], self.previous_bb[1] + self.previous_bb_move_vector[1],
                     self.previous_bb[2] + self.previous_bb_move_vector[0], self.previous_bb[3] + self.previous_bb_move_vector[1]]).astype(int)
@@ -66,7 +75,10 @@ class FaceExtractor:
         img_face = img[pt1[1]:pt2[1], pt1[0]:pt2[0]]
         # convert to 192 x 128
         img_face = cv2.resize(img_face, (128, 192))
-        return img_face
+        if return_bb:
+            return img_face, [pt1, pt2]
+        else:
+            return img_face
 
 
 if __name__ == '__main__':

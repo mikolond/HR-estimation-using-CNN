@@ -3,7 +3,7 @@ data:
     extractor_dataset_dir: "datasets/dataset_pure"
     extractor_weights: "output/pure_exp24/best_extractor_weights.pth"
     estimator_dataset_dir: "datasets/estimator_pure_exp24"
-    output_dir: "output/pure_exp24_new4"
+    output_dir: "output/pure_exp24"
 
 extractor_model_path: "Models/extractor_model.py"
 estimator_model_path: "Models/estimator_model.py"

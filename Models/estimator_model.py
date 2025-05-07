@@ -45,11 +45,11 @@ class Estimator(nn.Module):
 
 
         alpha_elu = 1.0 # ELU alpha
-        channels_1 = 8
-        channels_2 = 8
-        channels_3 = 8
-        channels_4 = 8
-        channels_5 = 8
+        channels_1 = 32
+        channels_2 = 32
+        channels_3 = 32
+        channels_4 = 32
+        channels_5 = 32
 
 
 

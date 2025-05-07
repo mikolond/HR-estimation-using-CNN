@@ -102,7 +102,7 @@ class DatasetLoader:
                 # add random shade
                 frame = np.clip(frame + self.augmentation_color, 0, 255)
                 # flip the image
-                if random.choice([True, False]):
+                if self.flip:
                     frame = cv2.flip(frame, 1)
                 if DEBUG:
                     # convert frame to a supported depth
@@ -170,15 +170,17 @@ class DatasetLoader:
     def set_augmentation(self):
         # generate agumentation parameters
         # random angle
-        angle = 10
+        angle = 30
         self.augmentation_angle = random.uniform(-angle,angle)
         # random color
-        color = 10
+        color = 30
         self.augmentation_color = np.random.uniform(-color, color,3)
         # random translation
-        translation = 10
+        translation = 30
         self.augmentation_translation_x = np.random.randint(-translation, translation)
         self.augmentation_translation_y = np.random.randint(-translation, translation)
+        # flip
+        self.flip = random.choice([True, False])
     
     def reset(self):
         '''
