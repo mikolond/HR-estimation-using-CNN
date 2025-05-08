@@ -3,12 +3,11 @@ import csv
 import os
 import numpy as np
 import torch
-torch.manual_seed(222999)
 
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Trainers.extractor_trainer import ExtractorTrainer
 
-CONFIG_PATH = os.path.join("config_files", "channels_experiment", "config_extractor_pure_halmos_ch64.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_halmos_exp26.yaml")
 
 def train_extractor(config_path):
     # Load the YAML file
@@ -85,8 +84,9 @@ def train_extractor(config_path):
         if os.path.exists(config_data["load_model_path"]):
             trainer.load_model(config_data["load_model_path"])
     
-    # old_model_path = os.path.join("output","pure_exp24", "best_extractor_weights.pth")
-    # trainer.transfer_weights(old_model_path)
+    old_model_path = os.path.join("output","pure_exp24", "best_extractor_weights.pth")
+    trainer.transfer_weights(old_model_path)
+
     print("Training started")
     print("Model:", config_data["extractor_model_path"])
     print("Output path:", output_path)

@@ -103,6 +103,10 @@ class Extractor(nn.Module):
         # print("after max_pool1 unsqueeze", x.shape)
         x = self.conv5(F.dropout(x,p = 0.5, training=self.training))
         # print("after conv5", x.shape)
+        x = x.view(x.shape[2])
+        x[0] = x[1]
+        x[-1] = x[-2]
+        # print("after conv5 squeeze", x.shape)
         # normalize x from [min(x), max(x)] to [0,1]
         # x = x - x.min()
         # x = x / (x.max() - x.min())

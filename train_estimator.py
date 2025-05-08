@@ -3,14 +3,14 @@ import csv
 import os
 import numpy as np
 import torch
-torch.manual_seed(222999)
+
 
 from Datasets_handlers.Estimator.dataset_creator import DatasetCreator
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 from Trainers.estimator_trainer import EstimatorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "pretrain_estimator.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_exp24.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_model2_exp1.yaml")
 # CONFIG_PATH = os.path.join("config_files", "estimator_augment.yaml")
 
 def train_estimator(config_path):
