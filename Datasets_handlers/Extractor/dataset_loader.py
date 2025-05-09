@@ -5,6 +5,8 @@ import numpy as np
 
 
 DEBUG = False
+if DEBUG:
+    import time
 
 
 class DatasetLoader:
@@ -36,6 +38,46 @@ class DatasetLoader:
     def set_varying_offset(self, offset):
         self.offset = offset
         self.varying_offset = True
+
+    def augment_frame(self, frame):
+        '''
+        Augment the frame by rotating and zooming it
+        '''
+        zoom = self.augmentation_zoom
+        angle = self.augmentation_angle
+        tx = self.augmentation_translation_x
+        ty = self.augmentation_translation_y
+        # rotate and zoom image
+        (h, w) = frame.shape[:2]
+        center = (w / 2, h / 2)
+
+        # Get rotation + zoom matrix
+        M = cv2.getRotationMatrix2D(center, angle, 1/zoom)
+
+        # Add translation to the matrix (last column)
+        M[0, 2] += tx
+        M[1, 2] += ty
+
+        # Apply combined transformation
+        frame = cv2.warpAffine(
+            frame, M, (w, h),
+            flags=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=(0, 0, 0)
+            )     
+        # add random shade
+        frame = np.clip(frame + self.augmentation_color, 0, 255)
+        # flip the image
+        if self.flip:
+            frame = cv2.flip(frame, 1)
+        # add random zoom
+        if DEBUG:
+            # convert frame to a supported depth
+            frame_to_show = frame.astype(np.uint8)
+            # show the frame
+            cv2.imwrite("frame.png", frame_to_show)
+            time.sleep(1)
+        return frame
 
     def next_sequence(self):
         '''
@@ -96,25 +138,7 @@ class DatasetLoader:
         for frame_id in frames_to_load:
             frame = cv2.imread(os.path.join(self.dataset_path, self.current_video, str(frame_id) + ".png"))
             if self.augmentation:
-                # rotate the image
-                M = cv2.getRotationMatrix2D((frame.shape[1]//2, frame.shape[0]//2), np.radians(self.augmentation_angle), 1)
-                frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]), flags=cv2.INTER_AREA)
-                # add random shade
-                frame = np.clip(frame + self.augmentation_color, 0, 255)
-                # flip the image
-                if self.flip:
-                    frame = cv2.flip(frame, 1)
-                if DEBUG:
-                    # convert frame to a supported depth
-                    frame_to_show = frame.astype(np.uint8)
-                    # show the frame
-                    cv2.imshow("frame", frame_to_show)
-                    cv2.waitKey(0)
-                # translate the image randomly
-                translation_x = self.augmentation_translation_x
-                translation_y = self.augmentation_translation_y
-                M = np.float32([[1,0,translation_x],[0,1,translation_y]])
-                frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+                frame = self.augment_frame(frame)
             self.frames = np.roll(self.frames, -1, axis=0)
             self.frames[-1:] = frame
         self.current_image += self.step_size
@@ -149,36 +173,26 @@ class DatasetLoader:
         for i in range(self.N):
             frame = cv2.imread(os.path.join(self.dataset_path, self.current_video, str(i) + ".png"))
             if self.augmentation:
-                # rotate the image
-                M = cv2.getRotationMatrix2D((frame.shape[1]//2, frame.shape[0]//2), self.augmentation_angle, 1)
-                frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
-                # add random color
-                frame = np.clip(frame + self.augmentation_color, 0, 255)
-
-                if self.flip:
-                    frame = cv2.flip(frame, 1)
-                if DEBUG:
-                    # convert frame to a supported depth
-                    frame_to_show = frame.astype(np.uint8)
-                    # show the frame
-                    print("frame shape", frame_to_show.shape)
-                    cv2.imshow("frame", frame_to_show)
-                    cv2.waitKey(0)
+                frame = self.augment_frame(frame)
             self.frames[i] = frame
         return self.N
 
     def set_augmentation(self):
         # generate agumentation parameters
         # random angle
-        angle = 30
-        self.augmentation_angle = random.uniform(-angle,angle)
+        angle = 45
+        self.augmentation_angle = np.random.uniform(-angle, angle)
         # random color
-        color = 30
+        color = 10
         self.augmentation_color = np.random.uniform(-color, color,3)
         # random translation
-        translation = 30
+        translation = 20
         self.augmentation_translation_x = np.random.randint(-translation, translation)
         self.augmentation_translation_y = np.random.randint(-translation, translation)
+        # random zoom
+        zoom_in = 0.3
+        zoom_out = 0.1
+        self.augmentation_zoom = np.random.uniform(1+zoom_out, 1-zoom_in)
         # flip
         self.flip = random.choice([True, False])
     
@@ -249,14 +263,14 @@ class DatasetLoader:
 
 
 if __name__ == "__main__":
-    dataset_path = "datasets/dataset_synthetic"
+    dataset_path = "datasets/dataset_ecg_fitness"
     videos = ["video_1", "video_2"]
     import time
     start = time.time()
 
 
     dataset_loader = DatasetLoader(dataset_path, videos, N=300, step_size=100,augmentation=True)
-
+    start = time.time()
     while True:
         sequence = dataset_loader.get_sequence()
         hr = dataset_loader.get_hr()
@@ -267,5 +281,6 @@ if __name__ == "__main__":
         print("dataset_done", dataset_done)
         if dataset_done is None:
             break
+    print("time", time.time() - start)
     dataset_loader.reset()
 

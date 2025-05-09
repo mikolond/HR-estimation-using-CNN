@@ -3,7 +3,7 @@ data:
     dataset_dir: "/mnt/data_personal/mikolond/datasets/dataset_ecg_fitness"
     output_dir: "output/ecg_exp26_continue/"
 
-model_path: "Models/extractor_model.py"
+extractor_model_path: "Models/extractor_model.py"
 
 optimizer:
     batch_size: 1

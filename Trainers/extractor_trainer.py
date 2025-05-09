@@ -242,7 +242,7 @@ class ExtractorTrainer:
         estimated_time_minutes = estimated_time // 60
         estimated_time_hours = estimated_time_minutes // 60
         percentage_progress = epoch_progress[0] / epoch_progress[1] * 100
-        alpha = 0.99  # Smoothing factor
+        alpha = 0.995  # Smoothing factor
         if not hasattr(self, 'ema_loss'):
             self.ema_loss = loss
         else:

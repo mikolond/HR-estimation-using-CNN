@@ -7,7 +7,7 @@ import torch
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Trainers.extractor_trainer import ExtractorTrainer
 
-CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_pure_halmos_exp26.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_extractor_model3_exp1.yaml")
 
 def train_extractor(config_path):
     # Load the YAML file
@@ -86,7 +86,7 @@ def train_extractor(config_path):
     
     old_model_path = os.path.join("output","pure_exp24", "best_extractor_weights.pth")
     trainer.transfer_weights(old_model_path)
-
+    
     print("Training started")
     print("Model:", config_data["extractor_model_path"])
     print("Output path:", output_path)
