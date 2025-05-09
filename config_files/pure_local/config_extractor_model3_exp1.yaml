@@ -3,17 +3,17 @@ data:
     dataset_dir: "datasets/dataset_pure"
     output_dir: "output/extractor_model3_exp1"
 
-extractor_model_path: "Models/extractor_model3.py"
+extractor_model_path: "Models/extractor_model4.py"
 
 optimizer:
     batch_size: 1
     cumulative_batch_size: 50
-    lr: 1e-6
+    lr: 1e-5
     max_epochs: 600
     patience: 150
     decrease_lr: False
     lr_decay: 0.1
-    lr_decay_epochs: [20]
+    lr_decay_epochs: [10,25]
 
 hr_data:
     frequency_range: [40, 240]
@@ -30,5 +30,5 @@ valid:
     shift: 150
     augment: False
 
-load_model: True
+load_model: False
 load_model_path: "output/extractor_model3_exp1/last_extractor_weights.pth"

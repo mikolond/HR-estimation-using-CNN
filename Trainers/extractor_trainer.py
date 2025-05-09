@@ -71,6 +71,7 @@ class ExtractorTrainer:
                 if name.startswith(layer_name + "."):  # Match layer and its sub-layers
                     layer_params.append(param)
                     assigned_param_names.add(name)  # Keep track of assigned params
+                    print(f"set Layer: {name}, Learning Rate: {lr}")
 
             if layer_params:
                 params.append({"params": layer_params, "lr": lr})
@@ -80,6 +81,7 @@ class ExtractorTrainer:
             if name not in assigned_param_names:
                 if self.learning_rate is not None:
                     remaining_params.append(param)
+                    print(f"remaining Layer: {name}, Learning Rate: {self.learning_rate}")
                 else:
                     raise ValueError(
                         f"Parameter '{name}' has no learning rate specified and "
@@ -87,6 +89,7 @@ class ExtractorTrainer:
                     )
         if remaining_params:
             params.append({"params": remaining_params, "lr": self.learning_rate})
+        print("custom optimizer params set:")
 
         self.optimizer = torch.optim.Adam(params, weight_decay=1e-4)
 

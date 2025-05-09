@@ -180,13 +180,13 @@ class DatasetLoader:
     def set_augmentation(self):
         # generate agumentation parameters
         # random angle
-        angle = 45
+        angle = 20
         self.augmentation_angle = np.random.uniform(-angle, angle)
         # random color
         color = 10
         self.augmentation_color = np.random.uniform(-color, color,3)
         # random translation
-        translation = 20
+        translation = 5
         self.augmentation_translation_x = np.random.randint(-translation, translation)
         self.augmentation_translation_y = np.random.randint(-translation, translation)
         # random zoom

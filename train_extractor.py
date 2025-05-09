@@ -84,9 +84,12 @@ def train_extractor(config_path):
         if os.path.exists(config_data["load_model_path"]):
             trainer.load_model(config_data["load_model_path"])
     
-    old_model_path = os.path.join("output","pure_exp24", "best_extractor_weights.pth")
-    trainer.transfer_weights(old_model_path)
-    
+    # old_model_path = os.path.join("output","pure_exp24", "best_extractor_weights.pth")
+    # trainer.transfer_weights(old_model_path)
+    lr1 = 1e-4
+    lr2 = 1e-6
+    layers = [("bn_input", lr1),("conv1",lr1),("conv2",lr1),("conv3",lr1),("conv4",lr1),("conv5",lr2),("conv6",lr2),("conv7",lr2),("conv_last",lr2)]
+    trainer.make_custom_optimizer(layers)
     print("Training started")
     print("Model:", config_data["extractor_model_path"])
     print("Output path:", output_path)

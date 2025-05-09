@@ -76,8 +76,9 @@ class Extractor(nn.Module):
         self.conv5 = nn.Conv2d(ch2, ch2, kernel_size=(3,24), stride=(1,1), padding=(1,0), padding_mode="reflect")
         self.conv6 = nn.Conv2d(ch2, ch2, kernel_size=(3,24), stride=(1,1), dilation=(2,1), padding=(2,0), padding_mode="reflect")
         self.conv7 = nn.Conv2d(ch2, ch2, kernel_size=(3,24), stride=(1,1), dilation=(3,1), padding=(3,0), padding_mode="reflect")
+        self.max_pool2 = nn.MaxPool2d(kernel_size=(1,3), stride=(1,1))
         # 1 x 1
-        self.conv_last = nn.Conv2d(3*ch2, 1, kernel_size=(1,1), stride=(1,1))
+        self.conv_last = nn.Conv2d(ch2, 1, kernel_size=(1,1), stride=(1,1))
         # 1 x 1
         # self.conv_last = create_layer(["CONV",ch2, out_ch, 1, 1, 0])
 
@@ -111,7 +112,8 @@ class Extractor(nn.Module):
         # print("after conv6", x2.shape)
         x3 = self.conv7(F.dropout(x,p = 0.5, training=self.training))
         # print("after conv7", x3.shape)
-        x = torch.cat((x1,x2,x3), dim=1)
+        x = torch.cat((x1,x2,x3), dim=3)
+        x = self.max_pool2(x)
         # print("after conv5, conv6, conv7 cat", x.shape)
         x = self.conv_last(x)
         # print("after conv_last", x.shape)
