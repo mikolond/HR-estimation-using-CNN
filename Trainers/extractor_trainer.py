@@ -33,7 +33,7 @@ class ExtractorTrainer:
         Extractor = load_model_class(model_path, "Extractor")
         self.model = Extractor().to(self.device)
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.01)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.7)
         self.validation_loss_log = []
         self.current_epoch = 0
@@ -119,6 +119,7 @@ class ExtractorTrainer:
             self.model.train()
             epoch_done = False
             train_counter = 1
+            accumulated_steps = 0
             while not epoch_done:
                 epoch_start = time.time()
                 sequence, f_true, fs, n_of_sequences, epoch_done, deltas = self.create_batch(self.train_data_loader)
@@ -139,13 +140,18 @@ class ExtractorTrainer:
                     loss = self.loss_fc(output, f_true, fs, deltas, sampling_f, f_range)
                     train_loss += loss.item()
                     self.log_progress(loss.item(), start_time)
-                    loss = loss / self.cum_batch_size
                     before_backward = time.time()
                     loss.backward()
-                    if train_counter % self.cum_batch_size == 0 or epoch_done:
+                    accumulated_steps += 1
+                    if accumulated_steps >= self.cum_batch_size or epoch_done:
                         before_optimizer = time.time()
+                        for p in self.model.parameters():
+                            if p.grad is not None:
+                                p.grad.div_(accumulated_steps)
+
                         self.optimizer.step()
                         self.optimizer.zero_grad()
+                        accumulated_steps = 0
 
   
                     # print all times

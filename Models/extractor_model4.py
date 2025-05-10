@@ -69,25 +69,26 @@ class Extractor(nn.Module):
         self.bn_input = nn.BatchNorm2d(in_ch)
         self.conv1 = create_layer(["DP2",0,"CONV", in_ch, ch1, c_k_size, c_st, pad,"MP" ,m_k_size, (2,2), "BN", ch1,"ELU", alpha_elu])
         # 82 x 55
-        self.conv2 = create_layer(["DP",0.1,"CONV",ch1, ch1, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch1,"ELU", alpha_elu])
+        self.conv2 = create_layer(["DP",0.05,"CONV",ch1, ch1, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch1,"ELU", alpha_elu])
         # 54 x 37
-        self.conv3 = create_layer(["DP",0.2,"CONV",ch1, ch2, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
+        self.conv3 = create_layer(["DP",0.1,"CONV",ch1, ch2, c_k_size, c_st, pad,"MP",m_k_size, m_st, "BN", ch2,"ELU", alpha_elu])
         # 26 x 19
-        self.conv4 = create_layer(["DP2",0.3,"CONV",ch2, ch2, c_k_last_size, c_st, pad])
+        self.conv4 = create_layer(["DP2",0.2,"CONV",ch2, ch2, c_k_last_size, c_st, pad])
         # 15 x 10
         self.max_pool1 = create_layer(["MP",(10,7), (1,1),"BN", ch2,"ELU", alpha_elu])
         # 6 x 4
         # make 24 x bs
         # self.conv5 = nn.Conv2d(ch2, ch2, kernel_size=(3,24), stride=(1,1), padding=(1,0), padding_mode="reflect")
-        self.conv5 = create_layer(["DP",0.3,"CONV_dil",ch2, ch2, (3,24), (1,1), (1,0), (1,1)])
+        self.conv5 = create_layer(["DP",0.2,"CONV_dil",ch2, ch2, (3,24), (1,1), (1,0), (1,1)])
         # self.conv6 = nn.Conv2d(ch2, ch2, kernel_size=(3,24), stride=(1,1), dilation=(2,1), padding=(2,0), padding_mode="reflect")
-        self.conv6 = create_layer(["DP",0.3,"CONV_dil",ch2, ch2, (3,24), (1,1), (2,0), (2,1)])
+        self.conv6 = create_layer(["DP",0.2,"CONV_dil",ch2, ch2, (3,24), (1,1), (2,0), (2,1)])
         # self.conv7 = nn.Conv2d(ch2, ch2, kernel_size=(3,24), stride=(1,1), dilation=(3,1), padding=(3,0), padding_mode="reflect")
-        self.conv7 = create_layer(["DP",0.3,"CONV_dil",ch2, ch2, (3,24), (1,1), (3,0), (3,1)])
-        self.max_pool2 = nn.MaxPool2d(kernel_size=(1,3), stride=(1,1))
+        self.conv7 = create_layer(["DP",0.2,"CONV_dil",ch2, ch2, (3,24), (1,1), (3,0), (3,1)])
+        # self.max_pool2 = nn.MaxPool2d(kernel_size=(1,3), stride=(1,1))
+        self.conv8 = create_layer(["DP",0.2,"CONV_dil",ch2,ch2,(3,3), (1,1), (1,0), (1,1)])
         # 1 x 1
 
-        self.conv_last = create_layer(["DP",0.5,"CONV",ch2, out_ch, 1, 1, 0])
+        self.conv_last = create_layer(["DP",0.4,"CONV",ch2, out_ch, 1, 1, 0])
         # 1 x 1
         # self.conv_last = create_layer(["CONV",ch2, out_ch, 1, 1, 0])
 
@@ -122,7 +123,7 @@ class Extractor(nn.Module):
         x3 = self.conv7(x)
         # print("after conv7", x3.shape)
         x = torch.cat((x1,x2,x3), dim=3)
-        x = self.max_pool2(x)
+        x = self.conv8(x)
         # print("after conv5, conv6, conv7 cat", x.shape)
         x = self.conv_last(x)
         # print("after conv_last", x.shape)
