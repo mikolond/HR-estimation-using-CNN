@@ -1,6 +1,6 @@
 data:
     benchmark: "benchmarks/benchmark_pure_split2.yaml"
-    dataset_dir: "/mnt/data_personal/mikolond/datasets/dataset_ecg_fitness"
+    dataset_dir: "/ssd/temporary/mikolond/datasets/dataset_ecg_fitness"
     output_dir: "output/final_exp1_ecg_original_model"
 
 extractor_model_path: "Models/extractor_model.py"
