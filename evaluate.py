@@ -7,7 +7,7 @@ import time
 from utils import load_model_class
 plot_counter = 0
 
-CONFIG_PATH = os.path.join("config_files", "pure_local", "config_eval_exp24.yaml")
+CONFIG_PATH = os.path.join("config_files", "final_experiments", "config_eval_pure_original_model.yaml")
 
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
@@ -144,8 +144,6 @@ def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_f
 
     max_freq_index = np.argmax(fft_values)
     max_freq = freqs[max_freq_index]
-    plot_sequence(output, freqs, fft_values, hr,predicted, "trash/with_learning") # Different filename for padded plot
-    time.sleep(0.5)
 
     return max_freq
 
@@ -154,11 +152,15 @@ def plot_pearson(ground_truth, predicted, save_path, tag):
     pearson = np.corrcoef(ground_truth, predicted)[0, 1]
     minimum = min(min(ground_truth), min(predicted))
     maximum = max(max(ground_truth), max(predicted))
+    # Round axis limits to nearest 5
+    step = 10
+    minimum = int(minimum - 5)
+    maximum = int(maximum + 5)
     plt.xlim(minimum, maximum)
     plt.ylim(minimum, maximum)
     plt.plot([minimum, maximum], [minimum, maximum], 'r--')
-    plt.xticks(np.arange(minimum, maximum, 5),rotation=45)
-    plt.yticks(np.arange(minimum, maximum, 5))
+    plt.xticks(np.arange(minimum, maximum, step),rotation=45)
+    plt.yticks(np.arange(minimum, maximum+5, step))
     plt.grid()
     plt.gca().set_aspect('equal', adjustable='box')
     plt.scatter(ground_truth, predicted)
@@ -252,7 +254,7 @@ if __name__ == "__main__":
     test_data_loader = DatasetLoader(dataset_path, test_videos_list, N=seq_length, step_size=step_size, augmentation=False)
 
 
-    device = input("Device to train on: ")
+    device = input("Device to use: ")
     if not torch.cuda.is_available() or device == "cpu":
         device = torch.device("cpu")
     else:

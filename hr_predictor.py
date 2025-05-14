@@ -1,5 +1,5 @@
-from Models.estimator_model import Estimator
-from Models.extractor_model import Extractor
+from Models.estimator_model2 import Estimator
+from Models.extractor_model4 import Extractor
 from face_extractor import FaceExtractor
 import torch
 import numpy as np
@@ -114,6 +114,9 @@ class HRPredictor:
         return frame
     
     def get_face(self, image):
+        # Rotate the image 90 degrees anti-clockwise if width is larger than height
+        if image.shape[1] > image.shape[0]:
+            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE) 
         return self.face_extractor.extract_face(image)
     
     def load_n_faces(self, n):
@@ -193,10 +196,10 @@ class HRPredictor:
 if __name__ == '__main__':
     predictor = HRPredictor()
     predictor.set_device(torch.device('cuda'))
-    extractor_weights_path = os.path.join("output","pure_exp24","best_extractor_weights.pth")
+    extractor_weights_path = os.path.join("output","extractor_model3_exp1","best_extractor_weights.pth")
     predictor.load_extractor_weights(extractor_weights_path)
-    estimator_weights_path = os.path.join("output","pure_exp24_new2","best_estimator_weights.pth")
+    estimator_weights_path = os.path.join("output","model3_exp1_ecg","best_estimator_weights.pth")
     predictor.load_estimator_weights(estimator_weights_path)
-    video_path = "test_videos/me_klid_60s_60bpm.mp4"
+    video_path = "test_videos/me_150-120bom_1minut.mp4"
     predictions = predictor.process_video(video_path, 300)
     print(predictions)

@@ -11,6 +11,8 @@ class DatasetCreator:
         self.model = Extractor().to(device)
         if os.path.exists(weights_path):
             self.model.load_state_dict(torch.load(weights_path, map_location=device))
+        else:
+            raise FileNotFoundError(f"Extractor weights:{weights_path} not found")
         self.model.eval()
         self.dataset_path = source_path
         self.estimator_dataset_path = dest_path

@@ -33,7 +33,7 @@ class ExtractorTrainer:
         Extractor = load_model_class(model_path, "Extractor")
         self.model = Extractor().to(self.device)
         self.loss_fc = ExtractorLoss().to(self.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.01)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=0.1)
         # self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.7)
         self.validation_loss_log = []
         self.current_epoch = 0

@@ -7,7 +7,7 @@ import torch
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Trainers.extractor_trainer import ExtractorTrainer
 
-CONFIG_PATH = os.path.join("config_files", "final_experiments", "config_extractor_ecg_new_model.yaml")
+CONFIG_PATH = os.path.join("config_files", "model5", "config_extractor_pure_model5.yaml")
 # CONFIG_PATH = os.path.join("config_files", "final_experiments", "config_extractor_pure_new_model.yaml")
 # CONFIG_PATH = os.path.join("config_files", "final_experiments", "config_extractor_ecg_original_model.yaml")
 # CONFIG_PATH = os.path.join("config_files", "final_experiments", "config_extractor_pure_original_model.yaml")

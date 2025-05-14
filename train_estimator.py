@@ -10,7 +10,7 @@ from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 from Trainers.estimator_trainer import EstimatorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "synthetic", "pretrain_estimator.yaml")
-CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_model2.yaml")
+CONFIG_PATH = os.path.join("config_files", "pure_local", "config_estimator_model3_exp1_pure.yaml")
 # CONFIG_PATH = os.path.join("config_files", "estimator_augment.yaml")
 
 def train_estimator(config_path):
