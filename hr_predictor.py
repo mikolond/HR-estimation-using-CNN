@@ -1,15 +1,16 @@
 from Models.estimator_model2 import Estimator
 from Models.extractor_model4 import Extractor
 from face_extractor import FaceExtractor
+from utils import load_model_class
 import torch
 import numpy as np
 import os
 import cv2
 import matplotlib.pyplot as plt
-import time
 
 
 DEBUG = True
+CONFIG_PATH = os.path.join("config_files", "final_experiments", "config_process_video.yaml")
 
 def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_factor
     '''Use fourier transform to get the frequency with the highest amplitude with zero-padding.
@@ -73,7 +74,13 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 
 
 class HRPredictor:
-    def __init__(self):
+    def __init__(self,extractor_path=None, estimator_path=None):
+        if extractor_path is None:
+            raise ValueError("Extractor path is not set")
+        if estimator_path is None:
+            raise ValueError("Estimator path is not set")
+        Extractor = load_model_class(extractor_path)
+        Estimator = load_model_class(estimator_path)
         self.extractor = Extractor()
         self.estimator = Estimator()
         self.extractor.eval()
@@ -116,7 +123,9 @@ class HRPredictor:
     def get_face(self, image):
         # Rotate the image 90 degrees anti-clockwise if width is larger than height
         if image.shape[1] > image.shape[0]:
-            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE) 
+            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        face = self.face_extractor.extract_face(image)
+         
         return self.face_extractor.extract_face(image)
     
     def load_n_faces(self, n):

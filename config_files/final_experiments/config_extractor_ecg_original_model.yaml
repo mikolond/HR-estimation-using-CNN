@@ -1,5 +1,5 @@
 data:
-    benchmark: "benchmarks/benchmark_pure_split2.yaml"
+    benchmark: "benchmarks/benchmark_ecg2.yaml"
     dataset_dir: "/ssd/temporary/mikolond/datasets/dataset_ecg_fitness"
     output_dir: "output/final_exp1_ecg_original_model"
 

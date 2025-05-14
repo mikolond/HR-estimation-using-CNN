@@ -69,13 +69,13 @@ class Estimator(nn.Module):
         # 78
         self.conv7 = create_layer(["CONV", channels_2, channels_3 , conv_kernel, 1, 0, 1, "BN", channels_3, "ELU", alpha_elu])
         # 69
-        # self.conv8 = create_layer(["CONV", channels_3, channels_3 , conv_kernel, 1, 0, 1, "BN", channels_3, "ELU", alpha_elu])
+        self.conv8 = create_layer(["CONV", channels_3, channels_3 , conv_kernel, 1, 0, 1, "BN", channels_3, "ELU", alpha_elu])
         # 60
         self.conv9 = create_layer(["CONV", channels_3, channels_3 , conv_kernel, 1, 0, 1, "MP",max_pool_kernel, 1 ,"BN", channels_3, "ELU", alpha_elu])
         # 42
         self.conv10 = create_layer(["CONV", channels_3, channels_4 , conv_kernel, 1, 0, 1, "BN", channels_4, "ELU", alpha_elu])
         # 33
-        # self.conv11 = create_layer(["CONV", channels_4, channels_5 , conv_kernel, 1, 0, 1, "BN", channels_5, "ELU", alpha_elu])
+        self.conv11 = create_layer(["CONV", channels_4, channels_5 , conv_kernel, 1, 0, 1, "BN", channels_5, "ELU", alpha_elu])
 
         self.conv12 = create_layer(["CONV", channels_5, channels_5 , conv_kernel, 1, 0, 1, "MP",max_pool_kernel, 1 ,"BN", channels_5, "ELU", alpha_elu])
         # 24
@@ -98,10 +98,10 @@ class Estimator(nn.Module):
         x = self.conv5(F.dropout(x,p = 0.15, training=self.training))
         x = self.conv6(F.dropout(x,p = 0.15, training=self.training))
         x = self.conv7(F.dropout(x,p = 0.2, training=self.training))
-        # x = self.conv8(F.dropout(x,p = 0.2, training=self.training))
+        x = self.conv8(F.dropout(x,p = 0.2, training=self.training))
         x = self.conv9(F.dropout(x,p = 0.2, training=self.training))
         x = self.conv10(F.dropout(x,p = 0.3, training=self.training))
-        # x = self.conv11(F.dropout(x,p = 0.3, training=self.training))
+        x = self.conv11(F.dropout(x,p = 0.3, training=self.training))
         x = self.conv12(F.dropout(x,p = 0.3, training=self.training))
         x = self.conv_last(F.dropout(x,p = 0.5, training=self.training))
         x = self.ada_avg_pool(x)
