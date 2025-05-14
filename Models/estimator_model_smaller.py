@@ -40,16 +40,16 @@ class Estimator(nn.Module):
     def __init__(self):
         super(Estimator, self).__init__()
         # convolution parameters
-        conv_kernel = 25
-        max_pool_kernel = 4
+        conv_kernel = 16
+        max_pool_kernel = 5
 
 
         alpha_elu = 1.0 # ELU alpha
-        channels_1 = 16
-        channels_2 = 16
-        channels_3 = 16
-        channels_4 = 16
-        channels_5 = 16
+        channels_1 = 4
+        channels_2 = 4
+        channels_3 = 4
+        channels_4 = 4
+        channels_5 = 4
 
 
 
@@ -57,21 +57,21 @@ class Estimator(nn.Module):
         self.bn_input = nn.BatchNorm1d(1)
         self.conv1 = create_layer(["CONV", 1, channels_1 , conv_kernel, 1, 0, 1,"BN",channels_1,"ELU", alpha_elu])
         # 141
-        self.conv2 = create_layer(["CONV", channels_1, channels_1 , conv_kernel, 1, 0, 1,"BN",channels_1,"ELU", alpha_elu])
+        # self.conv2 = create_layer(["CONV", channels_1, channels_1 , conv_kernel, 1, 0, 1,"BN",channels_1,"ELU", alpha_elu])
         # 132
         self.conv3 = create_layer(["CONV", channels_1, channels_1 , conv_kernel, 1, 0, 1,"MP",max_pool_kernel, 1 ,"BN", channels_1, "ELU", alpha_elu])
         # 114
         self.conv4 = create_layer(["CONV", channels_1, channels_2 , conv_kernel, 1, 0, 1,"BN",channels_2,"ELU", alpha_elu])
         # 105
-        self.conv5 = create_layer(["CONV", channels_2, channels_2 , conv_kernel, 1, 0, 1, "BN", channels_2, "ELU", alpha_elu])
+        # self.conv5 = create_layer(["CONV", channels_2, channels_2 , conv_kernel, 1, 0, 1, "BN", channels_2, "ELU", alpha_elu])
         # 96
         self.conv6 = create_layer(["CONV", channels_2, channels_2 , conv_kernel, 1, 0, 1, "MP",max_pool_kernel, 1 ,"BN", channels_2, "ELU", alpha_elu])
         # 78
         self.conv7 = create_layer(["CONV", channels_2, channels_3 , conv_kernel, 1, 0, 1, "BN", channels_3, "ELU", alpha_elu])
         # 69
-        # self.conv8 = create_layer(["CONV", channels_3, channels_3 , conv_kernel, 1, 0, 1, "BN", channels_3, "ELU", alpha_elu])
+        self.conv8 = create_layer(["CONV", channels_3, channels_3 , conv_kernel, 1, 0, 1, "BN", channels_3, "ELU", alpha_elu])
         # 60
-        self.conv9 = create_layer(["CONV", channels_3, channels_3 , conv_kernel, 1, 0, 1, "MP",max_pool_kernel, 1 ,"BN", channels_3, "ELU", alpha_elu])
+        # self.conv9 = create_layer(["CONV", channels_3, channels_3 , conv_kernel, 1, 0, 1, "MP",max_pool_kernel, 1 ,"BN", channels_3, "ELU", alpha_elu])
         # 42
         self.conv10 = create_layer(["CONV", channels_3, channels_4 , conv_kernel, 1, 0, 1, "BN", channels_4, "ELU", alpha_elu])
         # 33
@@ -92,14 +92,14 @@ class Estimator(nn.Module):
 
         x = self.bn_input(x)
         x = self.conv1(F.dropout(x,p = 0.1, training=self.training))
-        x = self.conv2(F.dropout(x,p = 0.1, training=self.training))
+        # x = self.conv2(F.dropout(x,p = 0.1, training=self.training))
         x = self.conv3(F.dropout(x,p = 0.1, training=self.training))
         x = self.conv4(F.dropout(x,p = 0.15, training=self.training))
-        x = self.conv5(F.dropout(x,p = 0.15, training=self.training))
+        # x = self.conv5(F.dropout(x,p = 0.15, training=self.training))
         x = self.conv6(F.dropout(x,p = 0.15, training=self.training))
         x = self.conv7(F.dropout(x,p = 0.2, training=self.training))
-        # x = self.conv8(F.dropout(x,p = 0.2, training=self.training))
-        x = self.conv9(F.dropout(x,p = 0.2, training=self.training))
+        x = self.conv8(F.dropout(x,p = 0.2, training=self.training))
+        # x = self.conv9(F.dropout(x,p = 0.2, training=self.training))
         x = self.conv10(F.dropout(x,p = 0.3, training=self.training))
         # x = self.conv11(F.dropout(x,p = 0.3, training=self.training))
         x = self.conv12(F.dropout(x,p = 0.3, training=self.training))

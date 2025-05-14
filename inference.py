@@ -1,9 +1,8 @@
-from Models.estimator_model import Estimator
-from Models.extractor_model import Extractor
 import torch
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import load_model_class
 
 def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_factor
     '''Use fourier transform to get the frequency with the highest amplitude with zero-padding.
@@ -66,21 +65,31 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 
 
 class Inferencer:
-    def __init__(self):
+    def __init__(self, extractor_path=None, estimator_path=None):
+        if extractor_path is None:
+            raise ValueError("Extractor path is required")
+        if estimator_path is None:
+            raise ValueError("Estimator path is required")
+        if not os.path.isfile(extractor_path):
+            raise FileNotFoundError(f"Extractor {extractor_path} not found")
+        if not os.path.isfile(estimator_path):
+            raise FileNotFoundError(f"Estimator {estimator_path} not found")
+        Extractor = load_model_class(extractor_path, "Extractor")
+        Estimator = load_model_class(estimator_path, "Estimator")
         self.extractor = Extractor()
         self.estimator = Estimator()
         self.extractor.eval()
         self.estimator.eval()
-        cuda_available = torch.cuda.is_available()
-        print(f"CUDA available: {cuda_available}")
-        if cuda_available:
-            print("Using GPU")
-        else:
-            print("Using CPU")
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
         self.extractor.to(device)
         self.estimator.to(device)
         self.device = device
+    
+    def set_device(self, device):
+        self.device = device
+        self.extractor.to(self.device)
+        self.estimator.to(self.device)
+    
 
     def load_extractor_weights(self, model_path):
         if os.path.isfile(model_path):
@@ -98,12 +107,11 @@ class Inferencer:
         with torch.no_grad():
             x = torch.from_numpy(faces).permute(0, 3, 1, 2).float().to(self.device)
             output = self.extractor(x).detach().cpu().numpy()
-        return output
+        return output.squeeze()
     
-    def estimate(self, sequence):
+    def estimate(self, sequence, batch_size=1):
         with torch.no_grad():
-            x = torch.tensor(sequence).float().to(self.device).reshape(1,1,300)
+            x = torch.tensor(sequence).float().to(self.device).reshape(batch_size,1,300)
             output = self.estimator(x).detach().cpu().numpy()
-        get_max_freq_padded(sequence.squeeze(), 30, output, output, pad_factor=10)
-        return output * 60 # converting from Hz to bpm
+        return output.squeeze() * 60 # converting from Hz to bpm
     

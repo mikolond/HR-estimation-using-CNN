@@ -2,6 +2,7 @@ from Models.estimator_model2 import Estimator
 from Models.extractor_model4 import Extractor
 from face_extractor import FaceExtractor
 from utils import load_model_class
+from inference import Inferencer
 import torch
 import numpy as np
 import os
@@ -10,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 DEBUG = True
-CONFIG_PATH = os.path.join("config_files", "final_experiments", "config_process_video.yaml")
+CONFIG_PATH = os.path.join("config_files", "config_process_video.yaml")
 
 def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_factor
     '''Use fourier transform to get the frequency with the highest amplitude with zero-padding.
@@ -75,41 +76,25 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 
 class HRPredictor:
     def __init__(self,extractor_path=None, estimator_path=None):
-        if extractor_path is None:
-            raise ValueError("Extractor path is not set")
-        if estimator_path is None:
-            raise ValueError("Estimator path is not set")
-        Extractor = load_model_class(extractor_path)
-        Estimator = load_model_class(estimator_path)
-        self.extractor = Extractor()
-        self.estimator = Estimator()
-        self.extractor.eval()
-        self.estimator.eval()
+        self.inferencer = Inferencer(extractor_path=extractor_path, estimator_path=estimator_path)
         self.face_extractor = FaceExtractor()
 
-
-    
     def set_device(self, device):
-        self.device = device
-        self.extractor.to(device)
-        self.estimator.to(device)
+        self.inferencer.set_device(device)
     
-    def load_extractor_weights(self, model_path):
-        if os.path.isfile(model_path):
-            self.extractor.load_state_dict(torch.load(model_path, map_location=self.device))
-        else:
-            raise FileNotFoundError(f"Extractor {model_path} not found")
+    def load_extractor_weights(self, weights_path):
+        self.inferencer.load_extractor_weights(weights_path)
     
-    def load_estimator_weights(self, model_path):
-        if os.path.isfile(model_path):
-            self.estimator.load_state_dict(torch.load(model_path, map_location=self.device))
-        else:
-            raise FileNotFoundError(f"Estimator {model_path} not found")
+    def load_estimator_weights(self, weights_path):
+        self.inferencer.load_estimator_weights(weights_path)
     
     def load_video(self, path):
         self.cap = cv2.VideoCapture(path)
         if not self.cap.isOpened():
             raise FileNotFoundError(f"Video {path} not found")
+    
+    def get_frame_count(self):
+        return int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         
     def unload_video(self):
         self.cap.release()
@@ -121,11 +106,7 @@ class HRPredictor:
         return frame
     
     def get_face(self, image):
-        # Rotate the image 90 degrees anti-clockwise if width is larger than height
-        if image.shape[1] > image.shape[0]:
-            image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        face = self.face_extractor.extract_face(image)
-         
+        # Rotate the image 90 degrees anti-clockwise if width is larger than height (needs testing can differ for different video formats)
         return self.face_extractor.extract_face(image)
     
     def load_n_faces(self, n):
@@ -133,82 +114,130 @@ class HRPredictor:
         i = 0
         while True:
             frame = self.get_frame()
-            # rotate frame 90 degrees anti-clockwise
-            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            # cv2.imwrite("frame.png", frame)
             if frame is None:
                 break
             face = self.get_face(frame)
             if face is None and i == 0:
                 i = -1
-            # Optionally, save a sample face to verify the output
-            # cv2.imwrite("face.png", face)
             faces.append(face)
-            # print("Collected face with shape:", face.shape)
+            # save face to file
+            cv2.imwrite("face.png", face)
             i += 1
             if i >= n:
                 break
         faces = np.array(faces)
-        print("Final faces array shape:", faces.shape)
         return faces
     
     def extract(self, faces):
-        N = len(faces)
-        print("N:",N)
-        print("shape of faces:",faces.shape)
-        with torch.no_grad():
-            x = torch.from_numpy(faces).permute(0, 3, 1, 2).float().to(self.device)
-            print("x shape:",x.shape)
-            output = self.extractor(x).detach().cpu().numpy()
-        return output
+        return self.inferencer.extract(faces)
 
-    def estimate(self, sequence):
-        with torch.no_grad():
-            print("sequence shape:",sequence.shape)
-            x = torch.tensor(sequence).float().to(self.device).reshape(1,1,300)
-            print("x shape:",x.shape)
-            output = self.estimator(x).detach().cpu().numpy()
-            get_max_freq_padded(sequence.squeeze(), 30, output, output, pad_factor=10)
-        return output * 60 # converting from Hz to bpm
+    def estimate(self, sequence, batch_size=1):
+        return self.inferencer.estimate(sequence, batch_size=batch_size)
     
     def predict(self, faces):
-        features = self.extract(faces)
-        print("features shape:",features.shape)
-        plt.plot(features.squeeze())
-        plt.savefig("features.png")
-        prediction = self.estimate(features)
+        rppg = self.extract(faces)
+        prediction = self.estimate(rppg)
         return prediction
     
     def process_video(self, video_path, sequence_length):
         print("Processing video...")
         self.load_video(video_path)
-        print("Video loaded")
-        predictions = []
+        frame_count = self.get_frame_count()
+        print("Video loaded, extracting rppg signal...")
+        rppg = np.array([])
+        faces = np.array([])
+        last_faces = np.array([])
         while True:
-            print("Loading faces...")
+            last_faces = faces
             faces = self.load_n_faces(sequence_length)
             if faces is None or len(faces) == 0:
-                print("No faces found")
                 break
-            print("faces shape = ",faces.shape)
-            print("Predicting...")
             if len(faces) == sequence_length:
-                prediction = self.predict(faces)
-                print("Prediction:", prediction)
-                predictions.append(prediction)
-            else:
+                current_rppg = self.extract(faces)
+                rppg = np.append(rppg, current_rppg, axis=0)
+            elif len(faces) > 0:
+                current_length = len(faces)
+                complement_length = sequence_length - current_length
+                current_faces = np.concatenate((faces, last_faces[-complement_length:]), axis=0)
+                current_rppg = self.extract(current_faces)
+                current_rppg = current_rppg[-current_length:]
+                rppg = np.concatenate((rppg, current_rppg), axis=0)
                 break
+        # estimate extrated rppg signal
+        print("RPPG signal extracted, estimating HR...")
+        predictions = np.array([])
+        if len(rppg) < sequence_length:
+            print("Not enough frames to estimate HR")
+            return []
+        estimates = np.array([])
+        estimates_count = frame_count - sequence_length
+        rppg_batch = []
+        batch_count = 0
+        batch_max = 600
+        for i in range(estimates_count):
+            rppg_batch.append(rppg[i:i+sequence_length])
+            batch_count += 1
+            if batch_count == batch_max:
+                rppg_batch = np.array(rppg_batch)
+                current_estimate = self.estimate(rppg_batch, batch_size=batch_max)
+                estimates = np.append(estimates, current_estimate, axis=0)
+                rppg_batch = []
+                batch_count = 0
+        if len(rppg_batch) > 0:
+            rppg_batch = np.array(rppg_batch)
+            current_estimate = self.estimate(rppg_batch, batch_size=len(rppg_batch))
+            estimates = np.append(estimates,current_estimate, axis=0)
+        
+        for i in range(sequence_length//2):
+            predictions = np.append(predictions, estimates[0])
+        predictions = np.append(predictions, estimates)
+        for i in range(sequence_length//2):
+            predictions = np.append(predictions, estimates[-1])
+        
+
         self.unload_video()
         return predictions
     
 
 if __name__ == '__main__':
-    predictor = HRPredictor()
-    predictor.set_device(torch.device('cuda'))
-    extractor_weights_path = os.path.join("output","extractor_model3_exp1","best_extractor_weights.pth")
-    predictor.load_extractor_weights(extractor_weights_path)
-    estimator_weights_path = os.path.join("output","model3_exp1_ecg","best_estimator_weights.pth")
-    predictor.load_estimator_weights(estimator_weights_path)
-    video_path = "test_videos/me_150-120bom_1minut.mp4"
+    import yaml
+    with open(CONFIG_PATH, 'r') as file:
+        config_data = yaml.safe_load(file)
+    # load models
+    models = config_data["models"]
+    extractor_path = models["extractor_model_path"]
+    estimator_path = models["estimator_model_path"]
+    predictor = HRPredictor(extractor_path=extractor_path, estimator_path=estimator_path)
+
+    # load weights
+    weights = config_data["weights"]
+    if not os.path.exists(weights["extractor_weights"]):
+        raise FileNotFoundError(f"Extractor weights {weights['extractor']} not found")
+    if not os.path.exists(weights["estimator_weights"]):
+        raise FileNotFoundError(f"Estimator weights {weights['estimator']} not found")
+    predictor.load_extractor_weights(weights["extractor_weights"])
+    predictor.load_estimator_weights(weights["estimator_weights"])
+
+    # load video and output path
+    video_path = config_data["video_path"]
+    output_path = config_data["output_dir"]
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    device = input("Device to use: ")
+    if not torch.cuda.is_available() or device == "cpu":
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda:" + device)
+
+    predictor.set_device(device)
+
     predictions = predictor.process_video(video_path, 300)
-    print(predictions)
+    video_name = os.path.basename(video_path)
+    # change to .txt file
+    file_name = os.path.splitext(video_name)[0] + ".txt"
+    output_file_path = os.path.join(output_path, file_name)
+    with open(output_file_path, 'w') as f:
+        for prediction in predictions:
+            f.write(str(prediction) + "\n")
+    print("Predictions saved to", output_file_path)

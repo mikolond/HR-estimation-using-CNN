@@ -1,10 +1,10 @@
 data:
-    benchmark: "benchmarks/benchmark_pure.yaml"
-    dataset_dir: "datasets/dataset_pure"
+    benchmark: "benchmarks/benchmark_ecg2.yaml"
+    dataset_dir: "datasets/dataset_ecg_fitness"
     output_dir: "output/final_exp1_ecg_new_model"
 
 extractor_model_path: "Models/extractor_model4.py"
-estimator_model_path: "Models/estimator_model.py"
+estimator_model_path: "Models/estimator_model_smaller.py"
 
 weights:
     extractor_weights: "output/final_exp1_ecg_new_model/best_extractor_weights.pth"

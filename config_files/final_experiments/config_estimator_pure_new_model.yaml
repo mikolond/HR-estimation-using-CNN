@@ -3,10 +3,10 @@ data:
     extractor_dataset_dir: "datasets/dataset_pure"
     extractor_weights: "output/final_exp1_pure_new_model/best_extractor_weights.pth"
     estimator_dataset_dir: "datasets/final_exp1_pure_new_model"
-    output_dir: "output/final_exp1_pure_original_model"
+    output_dir: "output/final_exp1_pure_new_model"
 
 extractor_model_path: "Models/extractor_model4.py"
-estimator_model_path: "Models/estimator_model.py"
+estimator_model_path: "Models/estimator_model_smaller.py"
 
 optimizer:
     batch_size: 600
