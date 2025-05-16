@@ -7,7 +7,7 @@ import time
 from utils import load_model_class
 plot_counter = 0
 
-CONFIG_PATH = os.path.join("config_files", "final_experiments", "config_eval_ecg_new_model.yaml")
+CONFIG_PATH = os.path.join("config_files", "model5", "config_eval_ecg_model5.yaml")
 
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
@@ -60,10 +60,10 @@ class EstimatorEval:
     
 
     
-    def evaluate(self, data_loader, tag = "unknown"):
+    def evaluate(self, data_loader, tag = "unknown", save_predicitons=False):
         loss = {}
         # print("evaluating dataset")
-        loss["rmse"], loss["mae"], loss["pearson"] = self.validate(data_loader, tag)
+        loss["rmse"], loss["mae"], loss["pearson"] = self.validate(data_loader, tag, save_predicitons)
         return loss
     
     def infer_extractor(self, sequence):
@@ -97,9 +97,23 @@ class EstimatorEval:
 
         return ground_truth, predicted
     
-    def validate(self, data_loader, tag):
+    def validate(self, data_loader, tag, save_predicitons):
         ground_truth, predicted = self.make_predictions(data_loader)
+        if save_predicitons:
+            with open(os.path.join(self.output_path, "predictions_" + tag + ".txt"), 'w') as f:
+                f.write("ground_truth predicted\n")
+                for i in range(len(predicted)):
+                    f.write(f"{ground_truth[i]} {predicted[i]}\n")
+        
         plot_pearson(ground_truth, predicted, os.path.join(self.output_path), tag)
+        min_hr = 40
+        max__hr_data = max(max(ground_truth), max(predicted))
+        print("max__hr_data", max__hr_data)
+        max_hr = max(200, max__hr_data+10)//10*10
+        print("max_hr", max_hr)
+        errors_per_class = get_per_class_error(ground_truth, predicted,min_hr=min_hr, max_hr=max_hr)
+        plot_per_class_error(errors_per_class, os.path.join(self.output_path), tag, min_hr=min_hr, max_hr=max_hr)
+        
         errors = np.array(predicted) - np.array(ground_truth)
         # computes the rmse
         rmse = np.sqrt(np.mean(errors**2))
@@ -108,6 +122,36 @@ class EstimatorEval:
         # computes the pearsion correlation
         pearson = np.corrcoef(ground_truth, predicted)[0, 1]
         return rmse, mae, pearson
+    
+def get_per_class_error(ground_truth, predicted, min_hr = 40, max_hr=240, step_hr=10):
+    '''Calculate the error per class (e.g., per 10 bpm) and return the average error.'''
+    errors = np.array(predicted) - np.array(ground_truth)
+    # print("errors", errors)
+    # print("ground_truth", ground_truth)
+    # print("predicted", predicted)
+    classes = np.arange(min_hr, max_hr, step_hr)
+    errors_per_class = []
+    for i in range(len(classes)-1):
+        class_errors = errors[(ground_truth >= classes[i]) & (ground_truth < classes[i+1])]
+        if len(class_errors) > 0:
+            errors_per_class.append(np.mean(np.abs(class_errors)))
+        else:
+            errors_per_class.append(0)
+    return errors_per_class
+
+def plot_per_class_error(errors_per_class, save_path, tag, min_hr = 40, max_hr=240, step_hr=10):
+    '''Plot the error per class.'''
+    classes = np.arange(min_hr, max_hr, step_hr)
+    plt.figure()
+    plt.bar(classes[:-1], errors_per_class, width=8)
+    plt.xlabel("Heart Rate (bpm)")
+    plt.ylabel("Error (bpm)")
+    plt.title("Error per Class")
+    plt.xticks(classes, rotation=45)
+    plt.grid()
+    file_name = os.path.join(save_path, "error_per_class_" + tag + ".png")
+    plt.savefig(file_name, bbox_inches='tight')
+    plt.close()
         
     
 def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_factor
@@ -208,6 +252,7 @@ if __name__ == "__main__":
     config_data = yaml.safe_load(open(CONFIG_PATH, "r"))
     data = config_data["data"]
     weights = config_data["weights"]
+    models = config_data["models"]
     extractor_weights_path = weights["extractor_weights"]
     estimator_weights_path = weights["estimator_weights"]
     if not os.path.exists(extractor_weights_path):
@@ -260,22 +305,23 @@ if __name__ == "__main__":
     else:
         device = torch.device("cuda:" + device)
     # device = torch.device("cpu")
+    save_predictions_to_txt = config_data["save_predictions_to_txt"]
 
-    extractor_model_path = config_data["extractor_model_path"]
-    estimator_model_path = config_data["estimator_model_path"]
+    extractor_model_path = models["extractor_model_path"]
+    estimator_model_path = models["estimator_model_path"]
     Extractor = load_model_class(extractor_model_path, "Extractor")
     extractor_model = Extractor()
     extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
 
     evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, seq_length, output_path, estimator_model_path)
     print("evaluating train data")
-    loss_tr = evaluator.evaluate(train_data_loader, tag = "train")
+    loss_tr = evaluator.evaluate(train_data_loader, tag = "train", save_predicitons=save_predictions_to_txt)
     print("train loss:", loss_tr)
     print("evaluating validation data")
-    loss_val = evaluator.evaluate(valid_data_loader, tag = "validation")
+    loss_val = evaluator.evaluate(valid_data_loader, tag = "validation", save_predicitons=save_predictions_to_txt)
     print("validation loss:", loss_val)
     print("evaluating test data")
-    loss_tst = evaluator.evaluate(test_data_loader, tag = "test")
+    loss_tst = evaluator.evaluate(test_data_loader, tag = "test", save_predicitons=save_predictions_to_txt)
     print("test loss:", loss_tst)
 
     train_data_loader.reset()

@@ -1,19 +1,19 @@
 data:
-    benchmark: "benchmarks/benchmark_pure.yaml"
-    dataset_dir: "datasets/dataset_pure"
-    output_dir: "output/pure_model5_exp1"
+    benchmark: "benchmarks/benchmark_ecg1.yaml"
+    dataset_dir: "/ssd/temporary/mikolond/datasets/dataset_ecg_fitness"
+    output_dir: "output/final_exp1_ecg_new_model_split2"
 
 extractor_model_path: "Models/extractor_model5.py"
 
 optimizer:
     batch_size: 1
     cumulative_batch_size: 100
-    lr: 1e-3
+    lr: 1e-4
     max_epochs: 600
-    patience: 200
-    decrease_lr: True
+    patience: 30
+    decrease_lr: False
     lr_decay: 0.1
-    lr_decay_epochs: [20,50,150,200]
+    lr_decay_epochs: [20,50,150]
 
 hr_data:
     frequency_range: [40, 240]

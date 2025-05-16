@@ -164,6 +164,13 @@ class Extractor(nn.Module):
         # normalize x from [min(x), max(x)] to [0,1]
         # x = x - x.min()
         # x = x / (x.max() - x.min())
+        x = x.squeeze()
+        left = x[2]
+        x[0] = left
+        x[1] = left
+        right = x[-3]
+        x[-1] = right
+        x[-2] = right
         return x
 
     def init_weights(self):

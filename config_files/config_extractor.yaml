@@ -1,9 +1,9 @@
 data:
-    benchmark: "benchmarks/benchmark_pure.yaml"
-    dataset_dir: "datasets/dataset_pure"
-    output_dir: "output/pure_model5_exp1"
+    benchmark: "benchmarks/benchmark_example.yaml"
+    dataset_dir: "path/to/dataset"
+    output_dir: "path/to/output"
 
-extractor_model_path: "Models/extractor_model5.py"
+extractor_model_path: "Models/extractor_model.py"
 
 optimizer:
     batch_size: 1
@@ -13,7 +13,7 @@ optimizer:
     patience: 200
     decrease_lr: True
     lr_decay: 0.1
-    lr_decay_epochs: [20,50,150,200]
+    lr_decay_epochs: [20,50,150, 200]
 
 hr_data:
     frequency_range: [40, 240]
@@ -31,4 +31,4 @@ valid:
     augment: False
 
 load_model: False
-load_model_path: "output/extractor_model3_exp1/last_extractor_weights.pth"
+load_model_path: "path/to/weights.pth"
