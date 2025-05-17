@@ -7,8 +7,8 @@ import torch
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Trainers.extractor_trainer import ExtractorTrainer
 
-CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_extractor_split2.yaml")
-# CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_extractor_split3.yaml")
+# CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_extractor_split2.yaml")
+CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_extractor_split3.yaml")
 
 # CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "original", "config_extractor_split2.yaml")
 # CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "original", "config_extractor_split3.yaml")

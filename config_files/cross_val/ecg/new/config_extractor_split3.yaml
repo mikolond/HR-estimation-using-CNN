@@ -1,7 +1,7 @@
 data:
     benchmark: "benchmarks/benchmark_ecg3.yaml"
     dataset_dir: "/ssd/temporary/mikolond/datasets/dataset_ecg_fitness"
-    output_dir: "output/final_exp1_ecg_new_model_split3"
+    output_dir: "output/final_exp1_ecg_new_model_split3_good"
 
 extractor_model_path: "Models/extractor_model5.py"
 

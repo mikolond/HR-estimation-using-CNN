@@ -1,0 +1,18 @@
+data:
+    benchmark: "benchmarks/benchmark_pure.yaml"
+    dataset_dir: "datasets/dataset_pure"
+    output_dir: "output/ecg_model5_exp1"
+
+models:
+    extractor_model_path: "Models/extractor_model5.py"
+    estimator_model_path: "Models/estimator_model.py"
+
+weights:
+    extractor_weights: "output/ecg_model5_exp1/best_extractor_weights.pth"
+    estimator_weights: "output/ecg_model5_exp1/best_estimator_weights.pth"
+
+save_predictions_to_txt: True
+
+dataset_options:
+    sequence_length: 300
+    shift: 300
