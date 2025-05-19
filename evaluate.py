@@ -8,7 +8,7 @@ from utils import load_model_class
 plot_counter = 0
 
 # CONFIG_PATH = os.path.join("config_files", "statistics", "config_eval_pure1.yaml")
-CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "original", "config_eval_split2.yaml")
+CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "new", "config_eval_split3.yaml")
 
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
