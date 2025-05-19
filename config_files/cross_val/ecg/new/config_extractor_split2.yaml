@@ -1,7 +1,7 @@
 data:
     benchmark: "benchmarks/benchmark_ecg1.yaml"
     dataset_dir: "/ssd/temporary/mikolond/datasets/dataset_ecg_fitness"
-    output_dir: "output/final_exp1_ecg_new_model_split2"
+    output_dir: "output/final_exp1_ecg_new_model_split2_good"
 
 extractor_model_path: "Models/extractor_model5.py"
 
@@ -11,7 +11,7 @@ optimizer:
     lr: 1e-4
     max_epochs: 600
     patience: 30
-    decrease_lr: False
+    decrease_lr: True
     lr_decay: 0.1
     lr_decay_epochs: [20,50,150]
 
