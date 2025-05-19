@@ -166,11 +166,11 @@ class Extractor(nn.Module):
         # x = x / (x.max() - x.min())
         x = x.squeeze()
         left = x[2]
-        x[0] = left
-        x[1] = left
+        x[0] = 2 * left - x[3]
+        x[1] = 2 * left - x[4]
         right = x[-3]
-        x[-1] = right
-        x[-2] = right
+        x[-1] = 2 * right - x[-4]
+        x[-2] = 2 * right - x[-5]
         return x
 
     def init_weights(self):

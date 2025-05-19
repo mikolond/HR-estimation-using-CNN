@@ -7,7 +7,8 @@ import time
 from utils import load_model_class
 plot_counter = 0
 
-CONFIG_PATH = os.path.join("config_files", "statistics", "config_eval_ecg1.yaml")
+# CONFIG_PATH = os.path.join("config_files", "statistics", "config_eval_pure1.yaml")
+CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "original", "config_eval_split2.yaml")
 
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
@@ -324,34 +325,34 @@ if __name__ == "__main__":
     extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
 
     evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, seq_length, output_path, estimator_model_path)
-    # print("evaluating train data")
-    # loss_tr = evaluator.evaluate(train_data_loader, tag = "train", save_predicitons=save_predictions_to_txt)
-    # print("train loss:", loss_tr)
-    # print("evaluating validation data")
-    # loss_val = evaluator.evaluate(valid_data_loader, tag = "validation", save_predicitons=save_predictions_to_txt)
-    # print("validation loss:", loss_val)
-    # print("evaluating test data")
-    # loss_tst = evaluator.evaluate(test_data_loader, tag = "test", save_predicitons=save_predictions_to_txt)
-    # print("test loss:", loss_tst)
+    print("evaluating train data")
+    loss_tr = evaluator.evaluate(train_data_loader, tag = "train", save_predicitons=save_predictions_to_txt)
+    print("train loss:", loss_tr)
+    print("evaluating validation data")
+    loss_val = evaluator.evaluate(valid_data_loader, tag = "validation", save_predicitons=save_predictions_to_txt)
+    print("validation loss:", loss_val)
+    print("evaluating test data")
+    loss_tst = evaluator.evaluate(test_data_loader, tag = "test", save_predicitons=save_predictions_to_txt)
+    print("test loss:", loss_tst)
 
-    # train_data_loader.reset()
-    # valid_data_loader.reset()
-    # test_data_loader.reset()
+    train_data_loader.reset()
+    valid_data_loader.reset()
+    test_data_loader.reset()
 
-    # # open the result.csv in the output path
-    # result_path = os.path.join(output_path, "result.csv")
-    # if not os.path.exists(result_path):
-    #     with open(result_path, 'w') as file:
-    #         file.write("train_rmse, train_mae, train_pearson, valid_rmse, valid_mae, valid_pearson, test_rmse, test_mae, test_pearson\n")
-    # with open(result_path, 'a') as file:
-    #     file.write(f"{loss_tr['rmse']}, {loss_tr['mae']}, {loss_tr['pearson']}, {loss_val['rmse']}, {loss_val['mae']}, {loss_val['pearson']}, {loss_tst['rmse']}, {loss_tst['mae']}, {loss_tst['pearson']}\n")
-    # print("Results saved to", result_path)
-    # print("Evaluation done")
+    # open the result.csv in the output path
+    result_path = os.path.join(output_path, "result.csv")
+    if not os.path.exists(result_path):
+        with open(result_path, 'w') as file:
+            file.write("train_rmse, train_mae, train_pearson, valid_rmse, valid_mae, valid_pearson, test_rmse, test_mae, test_pearson\n")
+    with open(result_path, 'a') as file:
+        file.write(f"{loss_tr['rmse']}, {loss_tr['mae']}, {loss_tr['pearson']}, {loss_val['rmse']}, {loss_val['mae']}, {loss_val['pearson']}, {loss_tst['rmse']}, {loss_tst['mae']}, {loss_tst['pearson']}\n")
+    print("Results saved to", result_path)
+    print("Evaluation done")
 
-    print("Evaluating data loaders statistics")
-    dataloader_statistics = get_statistics(train_data_loader)
-    print("train data loader statistics:", dataloader_statistics)
-    dataloader_statistics = get_statistics(valid_data_loader)
-    print("validation data loader statistics:", dataloader_statistics)
-    dataloader_statistics = get_statistics(test_data_loader)
-    print("test data loader statistics:", dataloader_statistics)
+    # print("Evaluating data loaders statistics")
+    # dataloader_statistics = get_statistics(train_data_loader)
+    # print("train data loader statistics:", dataloader_statistics)
+    # dataloader_statistics = get_statistics(valid_data_loader)
+    # print("validation data loader statistics:", dataloader_statistics)
+    # dataloader_statistics = get_statistics(test_data_loader)
+    # print("test data loader statistics:", dataloader_statistics)

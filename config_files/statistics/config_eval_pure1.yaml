@@ -1,5 +1,5 @@
 data:
-    benchmark: "benchmarks/benchmark_pure.yaml"
+    benchmark: "benchmarks/benchmark_pure3.yaml"
     dataset_dir: "datasets/dataset_pure"
     output_dir: "output/ecg_model5_exp1"
 
