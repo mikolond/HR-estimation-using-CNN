@@ -8,7 +8,8 @@ from utils import load_model_class
 plot_counter = 0
 
 # CONFIG_PATH = os.path.join("config_files", "statistics", "config_eval_pure1.yaml")
-CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "new", "config_eval_split1.yaml")
+# CONFIG_PATH = os.path.join("config_files", "model5", "config_eval_pure_ecg.yaml")
+CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_eval_split2.yaml")
 
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
@@ -40,6 +41,7 @@ def get_statistics(data_loader):
     statistics["mean_deviation"] = mean_deviation
     statistics["average"] = average
     statistics["median"] = np.median(hr_data)
+    statistics["median deviation"] = np.mean(np.abs(hr_data - statistics["median"]))
     statistics["std_deviation"] = std_deviation
     statistics["min"] = np.min(hr_data)
     statistics["max"] = np.max(hr_data)
@@ -120,7 +122,7 @@ class EstimatorEval:
         min_hr = 40
         max__hr_data = max(max(ground_truth), max(predicted))
         print("max__hr_data", max__hr_data)
-        max_hr = max(200, max__hr_data+10)//10*10
+        max_hr = max(160, max__hr_data+10)//10*10
         print("max_hr", max_hr)
         errors_per_class = get_per_class_error(ground_truth, predicted,min_hr=min_hr, max_hr=max_hr)
         plot_per_class_error(errors_per_class, os.path.join(self.output_path), tag, min_hr=min_hr, max_hr=max_hr)
@@ -152,14 +154,17 @@ def get_per_class_error(ground_truth, predicted, min_hr = 40, max_hr=240, step_h
 
 def plot_per_class_error(errors_per_class, save_path, tag, min_hr = 40, max_hr=240, step_hr=10):
     '''Plot the error per class.'''
-    classes = np.arange(min_hr, max_hr, step_hr)
+    classes_lower_bounds = np.arange(min_hr, max_hr, step_hr)
+    class_labels = [f'{lower}-{lower + step_hr}' for lower in classes_lower_bounds[:-1]]
+
     plt.figure()
-    plt.bar(classes[:-1], errors_per_class, width=8)
-    plt.xlabel("Heart Rate (bpm)")
-    plt.ylabel("Error (bpm)")
+    plt.bar(classes_lower_bounds[:-1], errors_per_class, width=8)
+    plt.xlabel("Heart Rate Range [bpm]")
+    plt.ylabel("Error [bpm]")
     plt.title("Error per Class")
-    plt.xticks(classes, rotation=45)
+    plt.xticks(classes_lower_bounds[:-1], class_labels, rotation=45, ha='right')
     plt.grid()
+    plt.tight_layout() # Adjust layout to prevent labels from overlapping
     file_name = os.path.join(save_path, "error_per_class_" + tag + ".png")
     plt.savefig(file_name, bbox_inches='tight')
     plt.close()
@@ -203,6 +208,7 @@ def get_max_freq_padded(output, fps, hr,predicted, pad_factor=10): # Added pad_f
     return max_freq
 
 def plot_pearson(ground_truth, predicted, save_path, tag):
+    """Plots ground truth vs predicted with larger font sizes."""
     plt.figure()
     pearson = np.corrcoef(ground_truth, predicted)[0, 1]
     minimum = min(min(ground_truth), min(predicted))
@@ -213,15 +219,16 @@ def plot_pearson(ground_truth, predicted, save_path, tag):
     maximum = int(maximum + 5)
     plt.xlim(minimum, maximum)
     plt.ylim(minimum, maximum)
-    plt.plot([minimum, maximum], [minimum, maximum], 'r--')
-    plt.xticks(np.arange(minimum, maximum, step),rotation=45)
-    plt.yticks(np.arange(minimum, maximum+5, step))
-    plt.grid()
+    plt.plot([minimum, maximum], [minimum, maximum], 'r--', label='Ideal Prediction') # Added label
+    plt.xticks(np.arange(minimum, maximum, step), rotation=45, fontsize=14) # Increased font size
+    plt.yticks(np.arange(minimum, maximum + 5, step), fontsize=14) # Increased font size
+    plt.grid(True)
     plt.gca().set_aspect('equal', adjustable='box')
-    plt.scatter(ground_truth, predicted)
-    plt.title(f"{tag}-set, Pearson correlation R={pearson:.2f}")
-    plt.xlabel("Ground Truth bpm")
-    plt.ylabel("Predicted bpm")
+    plt.scatter(ground_truth, predicted, label='Predictions') # Added label to scatter
+    plt.title(f"{tag}-set, Pearson correlation R={pearson:.2f}", fontsize=16) # Increased font size
+    plt.xlabel("Ground Truth [bpm]", fontsize=14) # Increased font size
+    plt.ylabel("Predicted [bpm]", fontsize=14) # Increased font size
+    plt.legend(fontsize=12) # Added legend with increased font size
     namefile = "pearson_correlation_" + tag + ".png"
     if not os.path.exists(save_path):
         os.makedirs(save_path)

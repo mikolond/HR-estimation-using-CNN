@@ -8,7 +8,7 @@ from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Trainers.extractor_trainer import ExtractorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_extractor_split2.yaml")
-CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "new", "config_extractor_split1.yaml")
+CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_extractor_split1.yaml")
 
 # CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "original", "config_extractor_split2.yaml")
 # CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "original", "config_extractor_split3.yaml")
@@ -99,8 +99,8 @@ def train_extractor(config_path):
     
     # old_model_path = os.path.join("output","pure_exp22", "best_extractor_weights.pth")
     # trainer.transfer_weights(old_model_path)
-    # lr1 = 1e-4
-    # lr2 = 1e-6
+    lr1 = 1e-4
+    lr2 = 1e-6
     # layers = [("bn_input", lr1),("conv1",lr1),("conv2",lr1),("conv3",lr1),("conv4",lr1),("conv5",lr2),("conv6",lr2),("conv7",lr2),("conv_last",lr2)]
     # trainer.make_custom_optimizer(layers)
     print("Training started")

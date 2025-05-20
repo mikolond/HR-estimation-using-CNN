@@ -1,21 +1,21 @@
 data:
-    benchmark: "benchmarks/benchmark_pure3.yaml"
-    extractor_dataset_dir: "datasets/dataset_pure"
-    extractor_weights: "output/final_exp1_pure_new_model_split3_good/best_extractor_weights.pth"
-    estimator_dataset_dir: "datasets/final_exp1_pure_new_model_split3_good"
-    output_dir: "output/final_exp1_pure_new_model_split3_good"
+    benchmark: "benchmarks/benchmark_ecg2.yaml"
+    extractor_dataset_dir: "datasets/dataset_ecg_fitness"
+    extractor_weights: "output/pure_model5_exp1/best_extractor_weights.pth"
+    estimator_dataset_dir: "datasets/final_exp1_ecg_new_model_split1"
+    output_dir: "output/final_exp1_ecg_new_model_split1"
 
 extractor_model_path: "Models/extractor_model5.py"
 estimator_model_path: "Models/estimator_model.py"
 
 optimizer:
-    batch_size: 500
+    batch_size: 800
     lr: 0.1
     max_epochs: 5000
-    patience: 200
+    patience: 300
     decrease_lr: True
     lr_decay: 0.1
-    lr_decay_epochs: [50,100]
+    lr_decay_epochs: [300,500]
 
 create_new_dataset: False
 dataset_creator_N: 600
@@ -23,11 +23,11 @@ dataset_creator_augmentation: False
 
 train:
     sequence_length: 300
-    shift: 50
+    shift: 100
 
 valid:
     sequence_length: 300
-    shift: 50
+    shift: 150
 
 epochs_to_new_dataset: 100
 

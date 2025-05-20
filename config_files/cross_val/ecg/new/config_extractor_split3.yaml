@@ -1,7 +1,7 @@
 data:
     benchmark: "benchmarks/benchmark_ecg3.yaml"
     dataset_dir: "/ssd/temporary/mikolond/datasets/dataset_ecg_fitness"
-    output_dir: "output/final_exp1_ecg_new_model_split3_final"
+    output_dir: "output/final_exp2_ecg_new_model_split3"
 
 extractor_model_path: "Models/extractor_model5.py"
 
@@ -13,11 +13,11 @@ optimizer:
     patience: 200
     decrease_lr: True
     lr_decay: 0.1
-    lr_decay_epochs: [20,50,150, 200]
+    lr_decay_epochs: [20,50,150,200]
 
 hr_data:
     frequency_range: [40, 240]
-    delta: 5
+    delta: 8
     sampling_frequency: 1
 
 train:

@@ -1,9 +1,9 @@
 data:
-    benchmark: "benchmarks/benchmark_pure3.yaml"
-    extractor_dataset_dir: "datasets/dataset_pure"
-    extractor_weights: "output/final_exp1_pure_new_model_split3_good/best_extractor_weights.pth"
-    estimator_dataset_dir: "datasets/final_exp1_pure_new_model_split3_good"
-    output_dir: "output/final_exp1_pure_new_model_split3_good"
+    benchmark: "benchmarks/benchmark_ecg3.yaml"
+    extractor_dataset_dir: "datasets/dataset_ecg_fitness"
+    extractor_weights: "output/final_exp1_ecg_new_model_split3_final/best_extractor_weights.pth"
+    estimator_dataset_dir: "datasets/final_exp1_ecg_new_model_split3_final"
+    output_dir: "output/final_exp1_ecg_new_model_split3_final"
 
 extractor_model_path: "Models/extractor_model5.py"
 estimator_model_path: "Models/estimator_model.py"
