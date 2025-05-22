@@ -10,7 +10,7 @@ from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 from Trainers.estimator_trainer import EstimatorTrainer
 
 # CONFIG_PATH = os.path.join("config_files", "model5", "config_estimator_pure_ecg.yaml")
-CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_estimator_split3.yaml")
+CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_estimator_split2.yaml")
 # CONFIG_PATH = os.path.join("config_files", "estimator_augment.yaml")
 
 def train_estimator(config_path):

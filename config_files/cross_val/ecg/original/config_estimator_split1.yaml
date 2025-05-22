@@ -6,7 +6,7 @@ data:
     output_dir: "output/final_exp1_ecg_original_model_split1"
 
 extractor_model_path: "Models/extractor_model.py"
-estimator_model_path: "Models/estimator_model2.py"
+estimator_model_path: "Models/estimator_model.py"
 
 optimizer:
     batch_size: 600

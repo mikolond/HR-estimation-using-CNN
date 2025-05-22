@@ -332,15 +332,16 @@ if __name__ == "__main__":
     extractor_model.load_state_dict(torch.load(extractor_weights_path, map_location=device))
 
     evaluator = EstimatorEval(extractor_model, extractor_weights_path,estimator_weights_path, device, seq_length, output_path, estimator_model_path)
+    print("evaluating test data")
+    loss_tst = evaluator.evaluate(test_data_loader, tag = "test", save_predicitons=save_predictions_to_txt)
+    print("test loss:", loss_tst)
+    
     print("evaluating train data")
     loss_tr = evaluator.evaluate(train_data_loader, tag = "train", save_predicitons=save_predictions_to_txt)
     print("train loss:", loss_tr)
     print("evaluating validation data")
     loss_val = evaluator.evaluate(valid_data_loader, tag = "validation", save_predicitons=save_predictions_to_txt)
     print("validation loss:", loss_val)
-    print("evaluating test data")
-    loss_tst = evaluator.evaluate(test_data_loader, tag = "test", save_predicitons=save_predictions_to_txt)
-    print("test loss:", loss_tst)
 
     train_data_loader.reset()
     valid_data_loader.reset()

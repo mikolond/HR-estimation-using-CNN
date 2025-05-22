@@ -1,15 +1,15 @@
 data:
     benchmark: "benchmarks/benchmark_ecg3.yaml"
     dataset_dir: "datasets/dataset_ecg_fitness"
-    output_dir: "output/final_exp1_ecg_new_model_split3_final"
+    output_dir: "output/final_exp2_ecg_new_model_split3"
 
 models:
     extractor_model_path: "Models/extractor_model5.py"
     estimator_model_path: "Models/estimator_model.py"
 
 weights:
-    extractor_weights: "output/final_exp1_ecg_new_model_split3_final/best_extractor_weights.pth"
-    estimator_weights: "output/final_exp1_ecg_new_model_split3_final/best_estimator_weights.pth"
+    extractor_weights: "output/final_exp2_ecg_new_model_split3/best_extractor_weights.pth"
+    estimator_weights: "output/final_exp2_ecg_new_model_split3/best_estimator_weights.pth"
 
 save_predictions_to_txt: True
 
