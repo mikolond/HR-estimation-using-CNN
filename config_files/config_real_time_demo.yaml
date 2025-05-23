@@ -1,0 +1,6 @@
+models:
+  extractor_model: "Models/extractor_improved.py"
+  estimator_model: "Models/estimator_model.py"
+weights:
+  extractor_weights: "weights/extractor_weights.pth"
+  estimator_weights: "weights/estimator_weights.pth"

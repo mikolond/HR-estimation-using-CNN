@@ -203,9 +203,9 @@ class HRPredictor:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Process a video and predict HR (offline demo)")
-    parser.add_argument("-c", "--config_path", type=str, help="Path to the config file", default=None)
-    parser.add_argument("-v", "--video_path", type=str, help="Path to the video file", default=None)
-    parser.add_argument("-o", "--output_path", type=str, help="Path to the output file", default=None)
+    parser.add_argument("config_path", type=str, help="Path to the config file", default=None)
+    parser.add_argument("video_path", type=str, help="Path to the video file", default=None)
+    parser.add_argument("output_path", type=str, help="Path to the output file", default=None)
     args = parser.parse_args()
     if args.config_path is None:
         raise Exception("No config path provided")
@@ -226,8 +226,8 @@ if __name__ == '__main__':
         config_data = yaml.safe_load(file)
     # load models
     models = config_data["models"]
-    extractor_path = models["extractor_model_path"]
-    estimator_path = models["estimator_model_path"]
+    extractor_path = models["extractor_model"]
+    estimator_path = models["estimator_model"]
     predictor = HRPredictor(extractor_path=extractor_path, estimator_path=estimator_path)
 
     # load weights

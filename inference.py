@@ -89,6 +89,14 @@ class Inferencer:
         self.device = device
         self.extractor.to(self.device)
         self.estimator.to(self.device)
+
+    def set_device_auto(self):
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
+        self.extractor.to(self.device)
+        self.estimator.to(self.device)
     
 
     def load_extractor_weights(self, model_path):

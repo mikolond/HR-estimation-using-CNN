@@ -132,13 +132,19 @@ python3 demos/real_time_demo.py path/to/config.yaml
 ```
 The expected behavior is opencv window with the bounding box around the detected face and after 10 seconds with the estimation of the heart rate and the extracted rppg signal(last 10 seceonds of the signal):
 <img src="images/real_time_demo.png" height="400"> 
+There are also prepared weights for the extractor and estimator which can be used. There is also prepared config file for this demo. To start the real-time demo use this command:
+```
+python3 demos/real_time_demo.py config_files/config_real_time_demo.yaml     
+```
+The real-time demo udates the predictid value and the extracted rPPG signal every 10 seconds. It tries to execute the inference on the cuda device if available. When tring to uexecute on cpu it doesnt keep up.
 
 ### Offline demo
+⚠️ **Warning:** tested only on windows OS.
 The offline demo can be executed by calling the **demos/offline_demo.py** with the set of arguments.
 * __path/to/config.yaml__ the frst argument is the path to the configuration .yaml file
 * __path/to/video__ path to the video wchich we eant to precess
 * __path/to/output_dir__ path to the directory where we want the results to be saved.
-the offline demo is then exxecuted the followinf way:
+the offline demo is then exxecuted the following way:
 ```
 python3 demos/offline_demo.py path/to/config.yaml path/to/video path/to/output_dir
 ```

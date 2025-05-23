@@ -271,7 +271,7 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate the model")
-    parser.add_argument("-c", "--config_path", type=str, help="Path to the config file", default=None)
+    parser.add_argument("config_path", type=str, help="Path to the config file", default=None)
     args = parser.parse_args()
     if args.config_path is None:
         raise Exception("No config path provided")
