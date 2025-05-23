@@ -3,15 +3,12 @@ import csv
 import os
 import numpy as np
 import torch
+import argparse
 
 
 from Datasets_handlers.Estimator.dataset_creator import DatasetCreator
 from Datasets_handlers.Estimator.dataset_loader import EstimatorDatasetLoader
 from Trainers.estimator_trainer import EstimatorTrainer
-
-# CONFIG_PATH = os.path.join("config_files", "model5", "config_estimator_pure_ecg.yaml")
-CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_estimator_split2.yaml")
-# CONFIG_PATH = os.path.join("config_files", "estimator_augment.yaml")
 
 def train_estimator(config_path):
     # Load the YAML file
@@ -117,4 +114,15 @@ def train_estimator(config_path):
 
 
 if __name__ == "__main__":
-    train_estimator(CONFIG_PATH)
+    parser = argparse.ArgumentParser(description="Train the estimator, the config file path needs to be provided")
+    parser.add_argument("-c", "--config_path", type=str, help="Path to the config file", default=None)
+    args = parser.parse_args()
+
+    if args.config_path is None:
+        print("No config path provided")
+    else:
+        if not os.path.exists(args.config_path):
+            print("Config path does not exist")
+        else:
+            config_path = args.config_path
+        train_estimator(config_path)

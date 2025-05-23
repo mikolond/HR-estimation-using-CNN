@@ -3,13 +3,15 @@ from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import time
+import yaml
+import csv
 from utils import load_model_class
+import argparse
 plot_counter = 0
 
 # CONFIG_PATH = os.path.join("config_files", "statistics", "config_eval_pure1.yaml")
 # CONFIG_PATH = os.path.join("config_files", "model5", "config_eval_pure_ecg.yaml")
-CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_eval_split2.yaml")
+CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "new", "config_eval_split1.yaml")
 
 def get_statistics(data_loader):
     '''Calculate the average deviation between average of the data in loader and the real data in loader.'''
@@ -30,8 +32,11 @@ def get_statistics(data_loader):
     
     # get rif of all values not from inerval 40-240
     statistics["count"] = len(hr_data)
+    # get all outliers
+    outliers = hr_data[(hr_data < 40) | (hr_data > 240)]
+    statistics["outliers"] = outliers
     hr_data = hr_data[(hr_data >= 40) & (hr_data <= 240)]
-    outliers_count = len(hr_data) - statistics["count"]
+    outliers_count = statistics["count"] - len(hr_data)
     print("outliers count", outliers_count)
 
     hr_data = np.array(hr_data)
@@ -265,9 +270,18 @@ def plot_sequence(sequence,freqs,fft, real_hr,predicted, save_path):
 
 
 if __name__ == "__main__":
-    import yaml
-    import csv
-    config_data = yaml.safe_load(open(CONFIG_PATH, "r"))
+    parser = argparse.ArgumentParser(description="Evaluate the model")
+    parser.add_argument("-c", "--config_path", type=str, help="Path to the config file", default=None)
+    args = parser.parse_args()
+    if args.config_path is None:
+        raise Exception("No config path provided")
+    else:
+        if not os.path.exists(args.config_path):
+            raise Exception("Config path does not exist")
+        else:
+            config_path = args.config_path
+
+    config_data = yaml.safe_load(open(config_path, "r"))
     data = config_data["data"]
     weights = config_data["weights"]
     models = config_data["models"]
@@ -322,7 +336,6 @@ if __name__ == "__main__":
         device = torch.device("cpu")
     else:
         device = torch.device("cuda:" + device)
-    # device = torch.device("cpu")
     save_predictions_to_txt = config_data["save_predictions_to_txt"]
 
     extractor_model_path = models["extractor_model_path"]

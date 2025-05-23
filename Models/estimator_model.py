@@ -109,7 +109,6 @@ class Estimator(nn.Module):
         return x
 
     def init_weights(self):
-        print("Initializing weights")
         for layer in self.modules():
             if type(layer) == nn.Conv1d:
                 nn.init.xavier_normal_(layer.weight, gain=1)

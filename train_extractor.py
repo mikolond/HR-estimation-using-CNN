@@ -3,24 +3,10 @@ import csv
 import os
 import numpy as np
 import torch
+import argparse
 
 from Datasets_handlers.Extractor.dataset_loader import DatasetLoader
 from Trainers.extractor_trainer import ExtractorTrainer
-
-# CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "new", "config_extractor_split2.yaml")
-CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "original", "config_extractor_split2.yaml")
-
-# CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "original", "config_extractor_split2.yaml")
-# CONFIG_PATH = os.path.join("config_files", "cross_val", "ecg", "original", "config_extractor_split3.yaml")
-
-# CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "new", "config_extractor_split2.yaml")
-# CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "new", "config_extractor_split3.yaml")
-
-# CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "original", "config_extractor_split2.yaml")
-# CONFIG_PATH = os.path.join("config_files", "cross_val", "pure", "original", "config_extractor_split3.yaml")
-
-
-
 
 def train_extractor(config_path):
     # Load the YAML file
@@ -113,4 +99,16 @@ def train_extractor(config_path):
     trainer.train()
 
 if __name__ == "__main__":
-    train_extractor(CONFIG_PATH)
+    parser = argparse.ArgumentParser(description="Train the extractor, the config file path needs to be provided")
+    parser.add_argument("-c", "--config_path", type=str, help="Path to the config file", default=None)
+    args = parser.parse_args()
+
+    if args.config_path is None:
+        raise Exception("No config path provided")
+    else:
+        if not os.path.exists(args.config_path):
+            raise Exception("Config path does not exist")
+        else:
+            config_path = args.config_path
+        train_extractor(config_path)
+

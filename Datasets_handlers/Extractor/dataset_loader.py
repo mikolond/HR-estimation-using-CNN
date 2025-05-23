@@ -8,6 +8,13 @@ DEBUG = False
 if DEBUG:
     import time
 
+# default augmentation settings
+ANGLE = 20
+COLOR = 10
+TRANSLATION = 5
+ZOOM_IN = 0.3
+ZOOM_OUT = 0.1
+
 
 class DatasetLoader:
     def __init__(self, dataset_path, videos = None, N=100, step_size=1,augmentation=False):
@@ -97,8 +104,6 @@ class DatasetLoader:
                 common_frames_length = self.N - self.step_size
             else:
                 common_frames_length = 0
-            # print("common frames", common_frames)
-            # print("common frames", common_frames)
             if common_frames_length > 0:
                 # if some of the frames are already loaded keep the last common_frames_length frames
                 self.frames = np.roll(self.frames,-common_frames_length, axis=0)
@@ -117,8 +122,6 @@ class DatasetLoader:
                 common_frames_length = self.N - self.step_size
             else:
                 common_frames_length = 0
-            # print("common frames", common_frames)
-            # print("common frames", common_frames)
             if common_frames_length > 0:
                 # if some of the frames are already loaded keep the last common_frames_length frames
                 self.frames = np.roll(self.frames,-common_frames_length, axis=0)
@@ -177,21 +180,16 @@ class DatasetLoader:
             self.frames[i] = frame
         return self.N
 
-    def set_augmentation(self):
+    def set_augmentation(self, angle = ANGLE, color = COLOR, translation = TRANSLATION, zoom_in = ZOOM_IN, zoom_out = ZOOM_OUT):
         # generate agumentation parameters
         # random angle
-        angle = 20
         self.augmentation_angle = np.random.uniform(-angle, angle)
         # random color
-        color = 10
         self.augmentation_color = np.random.uniform(-color, color,3)
         # random translation
-        translation = 5
         self.augmentation_translation_x = np.random.randint(-translation, translation)
         self.augmentation_translation_y = np.random.randint(-translation, translation)
         # random zoom
-        zoom_in = 0.3
-        zoom_out = 0.1
         self.augmentation_zoom = np.random.uniform(1+zoom_out, 1-zoom_in)
         # flip
         self.flip = random.choice([True, False])

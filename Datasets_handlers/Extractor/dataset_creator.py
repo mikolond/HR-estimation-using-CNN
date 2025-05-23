@@ -379,17 +379,6 @@ class DatasetCreator:
 
 
 if __name__ == '__main__':
-    # import argparse
-    # parser = argparse.ArgumentParser(description="Create dataset")
-    # parser.add_argument("path_in", type=str, help="Path to the folder with videos")
-    # parser.add_argument("path_out", type=str, help="Path to the folder where the dataset will be saved")
-    # parser.add_argument("flag", type=str, help="Flag to determine the dataset type", default="ecg-fitness-bb")
-    # args = parser.parse_args()
-    # path_in = args.path_in
-    # path_out = args.path_out
-    # flag = args.flag
-    # dataset_creator = DatasetCreator(path_in, path_out, flag)
-    # dataset_creator.create_dataset()
     path_in = "/home/ondrej/Desktop/ptak_download/pure-img/pure-img"
     path_out = "/home/ondrej/Desktop/ptak_download/pure-img-out"
     flag = "pure-bb"

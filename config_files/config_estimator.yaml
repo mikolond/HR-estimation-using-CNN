@@ -29,7 +29,5 @@ valid:
     sequence_length: 300
     shift: 300
 
-epochs_to_new_dataset: 100
-
 load_model: False
 load_model_path: "path/to/weights.pth"

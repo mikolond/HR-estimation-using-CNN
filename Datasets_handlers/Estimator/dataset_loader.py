@@ -96,25 +96,3 @@ class EstimatorDatasetLoader:
     
     def get_progress(self):
         return self.current_video_index, len(self.videos)
-
-
-if __name__ == "__main__":
-    dataset_path = os.path.join("datasets", "estimator_synthetic")
-    loader = EstimatorDatasetLoader(dataset_path, N = 100, step_size = 100)
-
-    data = loader.get_sequence()
-    print(data[0].shape)
-
-    for i in range(19):
-        sequence, hr = loader.get_sequence()
-        print(sequence)
-        print(hr)
-        print(sequence.shape)
-        print("Progress:", loader.get_progress())
-        loader_finished = not loader.next_sequence()
-        print("Finished:", loader_finished)
-        # loader.reset()
-        # print("Reset")
-
-
-
