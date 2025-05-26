@@ -189,13 +189,3 @@ With 1 folder containing vid1 and vid2 and second folder containing vid3 and vid
  The synthetic data can be created using /synthetic_data/create_synhtetic_dataset.py
 It can be called with arguments see help (python create_synthetic_data.py -h)
 
-### Real data dataset
-A dataset from real data can be created using dataset_creator.py
-Currently it supports only creating dataset from ECG-fitness dataset.
-It can be called with argument, see help.
-
-### Training 
-The training is implemented in train.py. See help. The weights are  being saved each epoch of training in folder model_weights. The training uses tensorboard to log the progress of the training.
-
-### Evaluation
-If the model is trained it can be evaluated using evaluate.py. See help. It calculates the average deviation of the predicted hearth-rate and the real one. It also caluclate root mean square average and the signal to noise ration(since it is the loss function).
